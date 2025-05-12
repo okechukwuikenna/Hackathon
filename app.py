@@ -100,6 +100,8 @@ result_df["Confidence (%)"] = confidence
 csv = result_df.to_csv(index=False).encode()
 st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
 
+import random
+
 # --- Visualization ---
 st.markdown("---")
 st.subheader("📊 Dynamic Variable Comparison")
@@ -107,19 +109,38 @@ st.subheader("📊 Dynamic Variable Comparison")
 var_x = st.selectbox("Select X-axis Variable", df.columns, key="x")
 var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col), key="color")
 var_facet = st.selectbox("Split by (facet column)", df.columns, key="facet")
-chart_type = st.selectbox("Choose Chart Type", ["Bar", "Scatter", "Box", "Violin", "Pie"])
+chart_type = st.selectbox(
+    "Choose Chart Type",
+    ["Bar", "Column", "Scatter", "Line", "Box", "Violin", "Pie", "Histogram", "Heatmap"]
+)
+
+# Generate a random color palette
+unique_values = df[var_color].dropna().unique()
+color_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Set3 + px.colors.qualitative.Pastel
+random.shuffle(color_palette)
+color_map = {val: color_palette[i % len(color_palette)] for i, val in enumerate(unique_values)}
+
+fig = None
 
 # --- Dynamic chart rendering ---
 if chart_type == "Bar":
-    fig = px.histogram(
+    fig = px.bar(
         df,
         x=var_x,
         color=var_color,
-        facet_col=var_facet,
+        title=f"Bar Chart: {var_x} grouped by {var_color}",
         barmode='group',
-        title=f"{var_x} grouped by {var_color} and split by {var_facet}",
-        color_discrete_map={"Yes": "blue", "No": "red"},
-        category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
+        color_discrete_map=color_map
+    )
+
+elif chart_type == "Column":
+    fig = px.histogram(
+        df,
+        x=var_color,
+        color=var_x,
+        title=f"Column Chart: {var_color} vs {var_x}",
+        barmode='group',
+        color_discrete_map=color_map
     )
 
 elif chart_type == "Scatter":
@@ -128,8 +149,18 @@ elif chart_type == "Scatter":
         x=var_x,
         y=var_facet,
         color=var_color,
-        title=f"Scatter Plot of {var_x} vs {var_facet} colored by {var_color}",
-        color_discrete_map={"Yes": "blue", "No": "red"}
+        title=f"Scatter Plot: {var_x} vs {var_facet} colored by {var_color}",
+        color_discrete_map=color_map
+    )
+
+elif chart_type == "Line":
+    fig = px.line(
+        df.sort_values(by=var_x),
+        x=var_x,
+        y=var_facet,
+        color=var_color,
+        title=f"Line Chart: {var_facet} over {var_x} grouped by {var_color}",
+        color_discrete_map=color_map
     )
 
 elif chart_type == "Box":
@@ -138,8 +169,8 @@ elif chart_type == "Box":
         x=var_color,
         y=var_x,
         color=var_color,
-        title=f"Box Plot of {var_x} grouped by {var_color}",
-        color_discrete_map={"Yes": "blue", "No": "red"}
+        title=f"Box Plot: {var_x} grouped by {var_color}",
+        color_discrete_map=color_map
     )
 
 elif chart_type == "Violin":
@@ -149,8 +180,8 @@ elif chart_type == "Violin":
         y=var_x,
         color=var_color,
         box=True,
-        title=f"Violin Plot of {var_x} grouped by {var_color}",
-        color_discrete_map={"Yes": "blue", "No": "red"}
+        title=f"Violin Plot: {var_x} grouped by {var_color}",
+        color_discrete_map=color_map
     )
 
 elif chart_type == "Pie":
@@ -162,15 +193,38 @@ elif chart_type == "Pie":
         values='Count',
         title=f"Pie Chart of {var_color}",
         color=var_color,
-        color_discrete_map={"Yes": "blue", "No": "red"}
+        color_discrete_map=color_map
     )
 
-else:
-    fig = px.histogram(df, x=var_x)  # Fallback
+elif chart_type == "Histogram":
+    fig = px.histogram(
+        df,
+        x=var_x,
+        color=var_color,
+        facet_col=var_facet,
+        barmode='group',
+        title=f"Histogram: {var_x} grouped by {var_color} and split by {var_facet}",
+        color_discrete_map=color_map,
+        category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
+    )
 
-fig.update_layout(height=600)
-st.plotly_chart(fig, use_container_width=True)
+elif chart_type == "Heatmap":
+    try:
+        corr_df = df.select_dtypes(include=[np.number]).corr()
+        fig = px.imshow(
+            corr_df,
+            text_auto=True,
+            color_continuous_scale="RdBu_r",
+            title="Heatmap of Numeric Feature Correlation"
+        )
+    except Exception as e:
+        st.warning("⚠️ Heatmap requires only numeric features.")
+        st.write(str(e))
 
+# --- Show chart ---
+if fig:
+    fig.update_layout(height=600)
+    st.plotly_chart(fig, use_container_width=True)
 
 # --- Feature importance ---
 st.subheader("🔍 Top Features Influencing Repayment")
