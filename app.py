@@ -108,7 +108,7 @@ st.subheader("📊 Dynamic Variable Comparison")
 
 var_x = st.selectbox("Select X-axis Variable", df.columns, key="x")
 var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col), key="color")
-var_facet = st.selectbox("Split by (facet column)", df.columns, key="facet")
+var_facet = st.selectbox("Split by (facet column)", ["None"] + list(df.columns), key="facet")
 chart_type = st.selectbox(
     "Choose Chart Type",
     ["Bar", "Column", "Scatter", "Line", "Box", "Violin", "Pie", "Histogram", "Heatmap"]
