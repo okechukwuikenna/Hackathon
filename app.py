@@ -8,41 +8,37 @@ from sklearn.ensemble import RandomForestClassifier
 import plotly.express as px  # Import Plotly for interactive plots
 
 # --- Streamlit UI ---
+# Move set_page_config to the very top of your app
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
 
 # Load data
 @st.cache_data
 def load_data():
     df = pd.read_excel("loan_features_tables.xlsx")
-    df.columns = df.columns.str.strip()  # Strip any extra spaces
+    df.columns = df.columns.str.strip()  # Remove leading/trailing spaces from column names
     return df
 
 df = load_data()
 
-# Display column names for debugging
-st.write("Available columns in dataset:", df.columns.tolist())
+# Strip column names
+df.columns = df.columns.str.strip()
 
-# Define target column
-target_col = 'Debt'
+# Correct the error: 'Debt' should replace 'Paying Borrowed'
+target_col = 'Debt'  # Changed from 'Paying Borrowed' to 'Debt'
 
-# Check if 'Debt' exists in the dataset
-if target_col not in df.columns:
-    st.error(f"The '{target_col}' column is not present in the dataset. Please check the data and ensure it is included.")
-    st.stop()  # Stop further execution if the column is not found
-
-# Drop target column and prepare features
+# Drop target and prepare X, y
 X = df.drop(columns=[target_col])
 y = df[target_col]
 
-# Get categorical columns from X
+# Get categorical columns from X (after dropping target)
 categorical_cols = X.select_dtypes(include='object').columns.tolist()
 
-# Encode categorical columns
+# Encode categorical features
 encoder = OrdinalEncoder()
 X_encoded = X.copy()
 X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
 
-# Train Random Forest model
+# Train model
 model = RandomForestClassifier(random_state=42)
 model.fit(X_encoded, y)
 
@@ -50,7 +46,7 @@ model.fit(X_encoded, y)
 st.title("💸 Farmer Loan Repayment Predictor")
 st.markdown("""Use this tool to predict whether a farmer is likely to repay a loan based on their demographics and economic activity.""")
 
-# Sidebar for user input
+# Sidebar - Input form
 st.sidebar.header("Enter Farmer Details")
 
 def user_input():
@@ -65,12 +61,13 @@ def user_input():
 
 input_df = user_input()
 
-# Encode user input
+# Encode input
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-# Custom rules for repayment prediction
+# Function to determine if the farmer meets the repayment criteria
 def meets_repayment_rules(user_input_row):
+    """Custom rule to classify a farmer as likely to repay."""
     row = user_input_row.iloc[0]  # Single-row dataframe
     return (
         row["Age"] >= 25 and
@@ -88,20 +85,35 @@ def meets_repayment_rules(user_input_row):
         row["Pest Infestation"] == "No"
     )
 
-# Check if user input meets repayment rules
+# Check if the user meets the rules for loan repayment
 if meets_repayment_rules(input_df):
     prediction = "Yes"
     proba = [0.01, 0.99]  # Override to high confidence
 else:
+    # Prediction from model if rules are not met
     prediction = model.predict(input_encoded)[0]
     proba = model.predict_proba(input_encoded)[0]
 
-# Display prediction result
+# Prediction result
 st.subheader("Prediction Result")
 if prediction == "Yes":
     st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {round(max(proba)*100, 2)}%)")
 else:
     st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {round(max(proba)*100, 2)}%)")
+
+# --- Generalized Visualization Function ---
+def visualize_variable_comparison(df, column_name, target_col='Debt'):
+    """
+    Visualize comparison of a given column with the target column and add distinct colors.
+    """
+    # Ensure that the column is a categorical column
+    fig = px.histogram(df, x=column_name, color=target_col, 
+                        title=f"{column_name} vs {target_col}", 
+                        barmode='stack', 
+                        category_orders={column_name: sorted(df[column_name].dropna().unique())})
+    
+    # Display the plot in Streamlit
+    st.plotly_chart(fig)
 
 # --- Dashboard section ---
 st.markdown("---")
@@ -109,46 +121,22 @@ st.subheader("📊 Farmer Dataset Overview")
 
 col1, col2 = st.columns(2)
 
-# Income Level Distribution
+# Visualizing different variables against 'Debt'
 with col1:
-    st.markdown("**Income Level Distribution**")
-    fig1 = px.histogram(df, y='Avg Income Level', color='Avg Income Level', 
-                        title="Income Level Distribution", 
-                        category_orders={"Avg Income Level": sorted(df['Avg Income Level'].dropna().unique())})
-    st.plotly_chart(fig1)
+    st.markdown("**Gender vs Debt**")
+    visualize_variable_comparison(df, 'Gender')
 
-# Ownership of Agricultural Land
 with col2:
-    st.markdown("**Ownership of Agricultural Land**")
-    fig2 = px.histogram(df, x='Own Agri Land', color='Debt',  # Use 'Debt' column here
-                        title="Ownership of Agricultural Land vs Loan Repayment",
-                        barmode='stack')
-    st.plotly_chart(fig2)
+    st.markdown("**Drought Damage vs Debt**")
+    visualize_variable_comparison(df, 'Drought Damage')
 
-# Gender vs Loan Repayment
-st.subheader("Gender vs Loan Repayment")
-fig3 = px.histogram(df, x='Gender', color='Debt',  # Use 'Debt' column here
-                    title="Gender vs Loan Repayment", barmode='stack')
-st.plotly_chart(fig3)
+# More visualizations
+st.subheader("Other Variable Comparisons")
 
-# Education Level vs Loan Repayment
-st.subheader("Education Level vs Loan Repayment")
-fig4 = px.histogram(df, x='Educational Level', color='Debt',  # Use 'Debt' column here
-                    title="Education Level vs Loan Repayment", 
-                    category_orders={"Educational Level": sorted(df['Educational Level'].dropna().unique())})
-st.plotly_chart(fig4)
-
-# Drought Damage vs Loan Repayment
-st.subheader("Drought Damage vs Loan Repayment")
-fig5 = px.histogram(df, x='Drought Damage', color='Debt',  # Use 'Debt' column here
-                    title="Drought Damage vs Loan Repayment", barmode='stack')
-st.plotly_chart(fig5)
-
-# Pest Infestation vs Loan Repayment
-st.subheader("Pest Infestation vs Loan Repayment")
-fig6 = px.histogram(df, x='Pest Infestation', color='Debt',  # Use 'Debt' column here
-                    title="Pest Infestation vs Loan Repayment", barmode='stack')
-st.plotly_chart(fig6)
+visualize_variable_comparison(df, 'Pest Infestation')
+visualize_variable_comparison(df, 'Educational Level')
+visualize_variable_comparison(df, 'Own Agri Land')
+visualize_variable_comparison(df, 'Invest Freq')
 
 # --- End of Dashboard ---
 st.markdown("---")
