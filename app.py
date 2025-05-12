@@ -4,7 +4,6 @@ import numpy as np
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
 import plotly.express as px
-import random
 
 # --- Streamlit page setup ---
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
@@ -13,7 +12,7 @@ st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
 @st.cache_data
 def load_data():
     df = pd.read_excel("loan_features_tables.xlsx")
-    df.columns = df.columns.str.strip()  # Remove leading/trailing spaces
+    df.columns = df.columns.str.strip()
     return df
 
 df = load_data()
@@ -101,14 +100,15 @@ result_df["Confidence (%)"] = confidence
 csv = result_df.to_csv(index=False).encode()
 st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
 
+import random
+
 # --- Visualization ---
 st.markdown("---")
 st.subheader("📊 Dynamic Variable Comparison")
 
-# Select variables for visualization
 var_x = st.selectbox("Select X-axis Variable", df.columns, key="x")
 var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col), key="color")
-var_facet = st.selectbox("Split by (facet column)", ["None"] + list(df.columns), key="facet")
+var_facet = st.selectbox("Split by (facet column)", df.columns, key="facet")
 chart_type = st.selectbox(
     "Choose Chart Type",
     ["Bar", "Column", "Scatter", "Line", "Box", "Violin", "Pie", "Histogram", "Heatmap"]
@@ -130,8 +130,7 @@ if chart_type == "Bar":
         color=var_color,
         title=f"Bar Chart: {var_x} grouped by {var_color}",
         barmode='group',
-        color_discrete_map=color_map,
-        facet_col=var_facet if var_facet != "None" else None
+        color_discrete_map=color_map
     )
 
 elif chart_type == "Column":
@@ -141,15 +140,14 @@ elif chart_type == "Column":
         color=var_x,
         title=f"Column Chart: {var_color} vs {var_x}",
         barmode='group',
-        color_discrete_map=color_map,
-        facet_col=var_facet if var_facet != "None" else None
+        color_discrete_map=color_map
     )
 
 elif chart_type == "Scatter":
     fig = px.scatter(
         df,
         x=var_x,
-        y=var_facet if var_facet != "None" else var_x,  # Use `var_x` as fallback if `var_facet` is None
+        y=var_facet,
         color=var_color,
         title=f"Scatter Plot: {var_x} vs {var_facet} colored by {var_color}",
         color_discrete_map=color_map
@@ -159,9 +157,9 @@ elif chart_type == "Line":
     fig = px.line(
         df.sort_values(by=var_x),
         x=var_x,
-        y=var_facet if var_facet != "None" else var_x,
+        y=var_facet,
         color=var_color,
-        title=f"Line Chart: {var_facet if var_facet != 'None' else var_x} over {var_x} grouped by {var_color}",
+        title=f"Line Chart: {var_facet} over {var_x} grouped by {var_color}",
         color_discrete_map=color_map
     )
 
@@ -203,9 +201,9 @@ elif chart_type == "Histogram":
         df,
         x=var_x,
         color=var_color,
-        facet_col=var_facet if var_facet != "None" else None,
+        facet_col=var_facet,
         barmode='group',
-        title=f"Histogram: {var_x} grouped by {var_color} and split by {var_facet if var_facet != 'None' else ''}",
+        title=f"Histogram: {var_x} grouped by {var_color} and split by {var_facet}",
         color_discrete_map=color_map,
         category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
     )
@@ -254,4 +252,13 @@ st.markdown("""
 Improving your eligibility for agricultural loans is essential for building trust with lenders. Here are some tips:
 
 - 📄 **Submit complete documentation**: Including Voter’s Card, BVN, Tax Invoice, and Tax Clearance Certificate.
-- 💼 **Maintain steady income**: Aim for consistent
+- 💼 **Maintain steady income**: Aim for consistent income above ₦115,000/month.
+- 🌿 **Invest in your farm**: Frequent reinvestment in tools and land boosts credibility.
+- 🏡 **Own agricultural property**: Owning land and mechanized tools shows capacity to scale.
+- 📘 **Continue learning**: Completing secondary education or beyond helps improve eligibility.
+- 🛠️ **Control risks**: Reduce crop loss due to pests and drought by using modern methods.
+""")
+
+# --- Footer ---
+st.markdown("---")
+st.caption("Developed for farmer empowerment and financial inclusion.")
