@@ -26,8 +26,13 @@ df.columns = df.columns.str.strip()
 # Correct the error: 'Debt' should replace 'Paying Borrowed'
 target_col = 'Debt'  # Changed from 'Paying Borrowed' to 'Debt'
 
+# Check if target column exists in the DataFrame before proceeding
+if target_col not in df.columns:
+    st.error(f"Error: Column '{target_col}' not found in the dataset!")
+    st.stop()
+
 # Drop target and prepare X, y
-X = df.drop(columns=[target_col])
+X = df.drop(columns=[target_col], errors='ignore')  # Use errors='ignore' to avoid KeyError
 y = df[target_col]
 
 # Get categorical columns from X (after dropping target)
