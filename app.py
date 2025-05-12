@@ -20,7 +20,13 @@ def load_data():
 
 df = load_data()
 
-# Strip column names
+# Debugging steps: Print columns to make sure they are correct
+st.write("Columns in the dataset:", df.columns)
+
+# Print first few rows to check the content
+st.write(df.head())
+
+# Strip column names again to be sure
 df.columns = df.columns.str.strip()
 
 # Correct the error: 'Debt' should replace 'Paying Borrowed'
@@ -38,7 +44,7 @@ y = df[target_col]
 # Get categorical columns from X (after dropping target)
 categorical_cols = X.select_dtypes(include='object').columns.tolist()
 
-# Encode categorical features
+# Encode categorical columns
 encoder = OrdinalEncoder()
 X_encoded = X.copy()
 X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
@@ -106,42 +112,52 @@ if prediction == "Yes":
 else:
     st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {round(max(proba)*100, 2)}%)")
 
-# --- Generalized Visualization Function ---
-def visualize_variable_comparison(df, column_name, target_col='Debt'):
-    """
-    Visualize comparison of a given column with the target column and add distinct colors.
-    """
-    # Ensure that the column is a categorical column
-    fig = px.histogram(df, x=column_name, color=target_col, 
-                        title=f"{column_name} vs {target_col}", 
-                        barmode='stack', 
-                        category_orders={column_name: sorted(df[column_name].dropna().unique())})
-    
-    # Display the plot in Streamlit
-    st.plotly_chart(fig)
-
 # --- Dashboard section ---
 st.markdown("---")
 st.subheader("📊 Farmer Dataset Overview")
 
 col1, col2 = st.columns(2)
 
-# Visualizing different variables against 'Debt'
+# Income Level Distribution
 with col1:
-    st.markdown("**Gender vs Debt**")
-    visualize_variable_comparison(df, 'Gender')
+    st.markdown("**Income Level Distribution**")
+    fig1 = px.histogram(df, y='Avg Income Level', color='Avg Income Level', 
+                        title="Income Level Distribution", 
+                        category_orders={"Avg Income Level": sorted(df['Avg Income Level'].dropna().unique())})
+    st.plotly_chart(fig1)
 
+# Ownership of Agricultural Land
 with col2:
-    st.markdown("**Drought Damage vs Debt**")
-    visualize_variable_comparison(df, 'Drought Damage')
+    st.markdown("**Ownership of Agricultural Land**")
+    fig2 = px.histogram(df, x='Own Agri Land', color='Debt',  # Use 'Debt' for comparison
+                        title="Ownership of Agricultural Land vs Loan Repayment",
+                        barmode='stack')
+    st.plotly_chart(fig2)
 
-# More visualizations
-st.subheader("Other Variable Comparisons")
+# Gender vs Loan Repayment
+st.subheader("Gender vs Loan Repayment")
+fig3 = px.histogram(df, x='Gender', color='Debt',  # Use 'Debt' for comparison
+                    title="Gender vs Loan Repayment", barmode='stack')
+st.plotly_chart(fig3)
 
-visualize_variable_comparison(df, 'Pest Infestation')
-visualize_variable_comparison(df, 'Educational Level')
-visualize_variable_comparison(df, 'Own Agri Land')
-visualize_variable_comparison(df, 'Invest Freq')
+# Education Level vs Loan Repayment
+st.subheader("Education Level vs Loan Repayment")
+fig4 = px.histogram(df, x='Educational Level', color='Debt',  # Use 'Debt' for comparison
+                    title="Education Level vs Loan Repayment", 
+                    category_orders={"Educational Level": sorted(df['Educational Level'].dropna().unique())})
+st.plotly_chart(fig4)
+
+# Drought Damage vs Loan Repayment
+st.subheader("Drought Damage vs Loan Repayment")
+fig5 = px.histogram(df, x='Drought Damage', color='Debt',  # Use 'Debt' for comparison
+                    title="Drought Damage vs Loan Repayment", barmode='stack')
+st.plotly_chart(fig5)
+
+# Pest Infestation vs Loan Repayment
+st.subheader("Pest Infestation vs Loan Repayment")
+fig6 = px.histogram(df, x='Pest Infestation', color='Debt',  # Use 'Debt' for comparison
+                    title="Pest Infestation vs Loan Repayment", barmode='stack')
+st.plotly_chart(fig6)
 
 # --- End of Dashboard ---
 st.markdown("---")
