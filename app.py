@@ -24,7 +24,7 @@ df = load_data()
 df.columns = df.columns.str.strip()
 
 # Define target
-target_col = 'Paying Borrowed'
+target_col = 'Debt'  # Changed to Debt instead of Paying Borrowed
 
 # Drop target and prepare X, y
 X = df.drop(columns=[target_col])
@@ -71,7 +71,7 @@ def meets_repayment_rules(user_input_row):
     row = user_input_row.iloc[0]  # Single-row dataframe
     return (
         row["Age"] >= 25 and
-        row["Debt"] == "No" and
+        row["Debt"] == "No" and  # Changed to Debt
         row["Voters Card"] == "Yes" and
         row["BVN"] == "Yes" and
         row["Tax Invoice"] == "Yes" and
@@ -118,33 +118,33 @@ with col1:
 # Ownership of Agricultural Land
 with col2:
     st.markdown("**Ownership of Agricultural Land**")
-    fig2 = px.histogram(df, x='Own Agri Land', color='Paying Borrowed', 
+    fig2 = px.histogram(df, x='Own Agri Land', color='Debt',  # Changed to Debt
                         title="Ownership of Agricultural Land vs Loan Repayment",
                         barmode='stack')
     st.plotly_chart(fig2)
 
 # Gender vs Loan Repayment
 st.subheader("Gender vs Loan Repayment")
-fig3 = px.histogram(df, x='Gender', color='Paying Borrowed', 
+fig3 = px.histogram(df, x='Gender', color='Debt',  # Changed to Debt
                     title="Gender vs Loan Repayment", barmode='stack')
 st.plotly_chart(fig3)
 
 # Education Level vs Loan Repayment
 st.subheader("Education Level vs Loan Repayment")
-fig4 = px.histogram(df, x='Educational Level', color='Paying Borrowed',
+fig4 = px.histogram(df, x='Educational Level', color='Debt',  # Changed to Debt
                     title="Education Level vs Loan Repayment", 
                     category_orders={"Educational Level": sorted(df['Educational Level'].dropna().unique())})
 st.plotly_chart(fig4)
 
 # Drought Damage vs Loan Repayment
 st.subheader("Drought Damage vs Loan Repayment")
-fig5 = px.histogram(df, x='Drought Damage', color='Paying Borrowed', 
+fig5 = px.histogram(df, x='Drought Damage', color='Debt',  # Changed to Debt
                     title="Drought Damage vs Loan Repayment", barmode='stack')
 st.plotly_chart(fig5)
 
 # Pest Infestation vs Loan Repayment
 st.subheader("Pest Infestation vs Loan Repayment")
-fig6 = px.histogram(df, x='Pest Infestation', color='Paying Borrowed', 
+fig6 = px.histogram(df, x='Pest Infestation', color='Debt',  # Changed to Debt
                     title="Pest Infestation vs Loan Repayment", barmode='stack')
 st.plotly_chart(fig6)
 
