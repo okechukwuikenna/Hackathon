@@ -25,6 +25,8 @@ y = df[target_col]
 
 encoder = OrdinalEncoder()
 X_encoded = X.copy()
+print("Available columns in X:", X.columns.tolist())
+print("Categorical columns expected:", categorical_cols)
 X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
 
 # Train model
