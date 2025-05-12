@@ -5,8 +5,11 @@ import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
-import plotly.express as px
-import plotly.graph_objects as go
+import plotly.express as px  # Import Plotly for interactive plots
+
+# --- Streamlit UI ---
+# Move set_page_config to the very top of your app
+st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
 
 # Load data
 @st.cache_data
@@ -42,18 +45,9 @@ model.fit(X_encoded, y)
 # --- Streamlit UI ---
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
 
-# Load custom CSS
-def load_css():
-    with open("assets/style.css") as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-load_css()
-
 # Page title and description
 st.title("💸 Farmer Loan Repayment Predictor")
-st.markdown("""
-    Use this tool to predict whether a farmer is likely to repay a loan based on their demographics and economic activity.
-""")
+st.markdown("""Use this tool to predict whether a farmer is likely to repay a loan based on their demographics and economic activity.""")
 
 # Sidebar - Input form
 st.sidebar.header("Enter Farmer Details")
@@ -94,34 +88,42 @@ col1, col2 = st.columns(2)
 # Income Level Distribution
 with col1:
     st.markdown("**Income Level Distribution**")
-    fig1 = px.bar(df, y='Avg Income Level', color='Paying Borrowed', title="Income Level Distribution")
+    fig1 = px.histogram(df, y='Avg Income Level', color='Avg Income Level', 
+                        title="Income Level Distribution", 
+                        category_orders={"Avg Income Level": sorted(df['Avg Income Level'].dropna().unique())})
     st.plotly_chart(fig1)
 
 # Ownership of Agricultural Land
 with col2:
     st.markdown("**Ownership of Agricultural Land**")
-    fig2 = px.histogram(df, x='Own Agri Land', color='Paying Borrowed', title="Ownership of Agricultural Land")
+    fig2 = px.histogram(df, x='Own Agri Land', color='Paying Borrowed', 
+                        title="Ownership of Agricultural Land vs Loan Repayment",
+                        barmode='stack')
     st.plotly_chart(fig2)
 
 # Gender vs Loan Repayment
 st.subheader("Gender vs Loan Repayment")
-fig3 = px.histogram(df, x='Gender', color='Paying Borrowed', title="Gender vs Loan Repayment")
+fig3 = px.histogram(df, x='Gender', color='Paying Borrowed', 
+                    title="Gender vs Loan Repayment", barmode='stack')
 st.plotly_chart(fig3)
 
 # Education Level vs Loan Repayment
 st.subheader("Education Level vs Loan Repayment")
-fig4 = px.histogram(df, x='Educational Level', color='Paying Borrowed', title="Education Level vs Loan Repayment")
-fig4.update_xaxes(tickangle=45)
+fig4 = px.histogram(df, x='Educational Level', color='Paying Borrowed',
+                    title="Education Level vs Loan Repayment", 
+                    category_orders={"Educational Level": sorted(df['Educational Level'].dropna().unique())})
 st.plotly_chart(fig4)
 
 # Drought Damage vs Loan Repayment
 st.subheader("Drought Damage vs Loan Repayment")
-fig5 = px.histogram(df, x='Drought Damage', color='Paying Borrowed', title="Drought Damage vs Loan Repayment")
+fig5 = px.histogram(df, x='Drought Damage', color='Paying Borrowed', 
+                    title="Drought Damage vs Loan Repayment", barmode='stack')
 st.plotly_chart(fig5)
 
 # Pest Infestation vs Loan Repayment
 st.subheader("Pest Infestation vs Loan Repayment")
-fig6 = px.histogram(df, x='Pest Infestation', color='Paying Borrowed', title="Pest Infestation vs Loan Repayment")
+fig6 = px.histogram(df, x='Pest Infestation', color='Paying Borrowed', 
+                    title="Pest Infestation vs Loan Repayment", barmode='stack')
 st.plotly_chart(fig6)
 
 # --- End of Dashboard ---
