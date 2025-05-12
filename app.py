@@ -12,13 +12,12 @@ import seaborn as sns
 @st.cache_data
 def load_data():
     df = pd.read_excel("loan_features_tables.xlsx")
-    df.columns = df.columns.str.strip()  # Remove any leading/trailing whitespace
+    df.columns = df.columns.str.strip()  # Remove leading/trailing spaces from column names
     return df
 
 df = load_data()
 
 # Preprocessing
-df.columns = df.columns.str.strip()
 categorical_cols = df.select_dtypes(include='object').columns.tolist()
 target_col = 'Paying Borrowed'
 
@@ -27,12 +26,7 @@ y = df[target_col]
 
 encoder = OrdinalEncoder()
 X_encoded = X.copy()
-
-try:
-    X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
-except KeyError as e:
-    st.error(f"Encoding error: {e}")
-    st.stop()
+X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
 
 # Train model
 model = RandomForestClassifier(random_state=42)
@@ -43,11 +37,8 @@ st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
 
 # Load custom CSS
 def load_css():
-    try:
-        with open("assets/style.css") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-    except FileNotFoundError:
-        st.warning("⚠️ CSS file not found. Skipping custom styles.")
+    with open("assets/style.css") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 load_css()
 
@@ -132,6 +123,6 @@ fig6, ax6 = plt.subplots(figsize=(8, 6))
 sns.countplot(data=df, x='Pest Infestation', hue='Paying Borrowed', ax=ax6)
 st.pyplot(fig6)
 
-# End
+# --- End of Dashboard ---
 st.markdown("---")
 st.markdown("This app predicts whether a farmer will repay a loan based on various factors. Use the sidebar to input farmer details and view predictions and insights.")
