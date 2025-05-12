@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import joblib
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
 import plotly.express as px
@@ -10,6 +8,7 @@ import plotly.express as px
 # --- Streamlit UI ---
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
 
+# Load data
 @st.cache_data
 def load_data():
     df = pd.read_excel("loan_features_tables.xlsx")
@@ -18,32 +17,30 @@ def load_data():
 
 df = load_data()
 
-# Identify target column (e.g. "Debt")
+# Identify correct target column
 possible_target_names = [col for col in df.columns if col.strip().lower() == 'debt']
 if possible_target_names:
     target_col = possible_target_names[0]
 else:
-    st.error("❌ Error: Column 'Debt' not found!")
+    st.error("❌ Error: Column 'Debt' not found in the dataset!")
     st.write("Available columns:", list(df.columns))
     st.stop()
 
 # Prepare data
 X = df.drop(columns=[target_col])
 y = df[target_col]
-
-# Categorical encoding
 categorical_cols = X.select_dtypes(include='object').columns.tolist()
+
 encoder = OrdinalEncoder()
 X_encoded = X.copy()
 X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
 
-# Train model
 model = RandomForestClassifier(random_state=42)
 model.fit(X_encoded, y)
 
-# --- UI Form ---
+# --- UI: Input form ---
 st.title("💸 Farmer Loan Repayment Predictor")
-st.markdown("Predict if a farmer is likely to repay a loan based on input details.")
+st.markdown("Use this tool to predict whether a farmer is likely to repay a loan based on demographics and economic activity.")
 
 st.sidebar.header("Enter Farmer Details")
 
@@ -61,9 +58,9 @@ input_df = user_input()
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-# --- Rule-based override ---
-def meets_repayment_rules(row):
-    row = row.iloc[0]
+# --- Custom rules for eligibility ---
+def meets_repayment_rules(row_df):
+    row = row_df.iloc[0]
     return (
         row.get("Age", 0) >= 25 and
         row.get("Debt", "Yes") == "No" and
@@ -72,7 +69,9 @@ def meets_repayment_rules(row):
         row.get("Tax Invoice", "No") == "Yes" and
         row.get("Tax Clearance Cert", "No") == "Yes" and
         row.get("Invest Freq", "") in ["Always", "Sometimes"] and
-        row.get("Avg Income Level", "") in ["N215,001 - N315,000 per month", "Above N315,000 per month"] and
+        row.get("Avg Income Level", "") in [
+            "N215,001 - N315,000 per month", "Above N315,000 per month"
+        ] and
         row.get("Own Agri Land", "") != "Do not own" and
         row.get("Own Agri Mech Tool", "") != "Do not own" and
         row.get("Educational Level", "") not in ["No education", "Primary complete"] and
@@ -80,33 +79,35 @@ def meets_repayment_rules(row):
         row.get("Pest Infestation", "Yes") == "No"
     )
 
-# --- Eligibility TIPS ---
+# --- Generate tips for improving eligibility ---
 def get_improvement_tips(row):
     tips = []
-    if row.get("Debt", "Yes") != "No":
-        tips.append("Clear existing debts or obligations.")
+    if row.get("Debt", "Yes") == "Yes":
+        tips.append("Clear outstanding debt.")
     if row.get("Voters Card", "No") != "Yes":
-        tips.append("Obtain a Voter’s Card.")
+        tips.append("Obtain a Voters Card.")
     if row.get("BVN", "No") != "Yes":
-        tips.append("Ensure BVN is registered.")
+        tips.append("Get a Bank Verification Number (BVN).")
     if row.get("Tax Invoice", "No") != "Yes":
-        tips.append("Provide a valid tax invoice.")
+        tips.append("Ensure you have a Tax Invoice.")
     if row.get("Tax Clearance Cert", "No") != "Yes":
-        tips.append("Obtain a tax clearance certificate.")
+        tips.append("Obtain a Tax Clearance Certificate.")
     if row.get("Invest Freq", "") not in ["Always", "Sometimes"]:
-        tips.append("Invest in your business more frequently.")
-    if row.get("Avg Income Level", "") not in ["N215,001 - N315,000 per month", "Above N315,000 per month"]:
-        tips.append("Increase your monthly income if possible.")
+        tips.append("Increase frequency of investing.")
+    if row.get("Avg Income Level", "") not in [
+        "N215,001 - N315,000 per month", "Above N315,000 per month"
+    ]:
+        tips.append("Increase monthly income level.")
     if row.get("Own Agri Land", "") == "Do not own":
         tips.append("Consider acquiring agricultural land.")
     if row.get("Own Agri Mech Tool", "") == "Do not own":
-        tips.append("Invest in agricultural tools or machinery.")
+        tips.append("Invest in agricultural mechanization tools.")
     if row.get("Educational Level", "") in ["No education", "Primary complete"]:
-        tips.append("Consider basic adult education or training.")
+        tips.append("Consider furthering your education.")
     if row.get("Drought Damage", "Yes") == "Yes":
-        tips.append("Mitigate drought risk using irrigation or other techniques.")
+        tips.append("Use drought-resistant techniques or crops.")
     if row.get("Pest Infestation", "Yes") == "Yes":
-        tips.append("Prevent or manage pest infestations effectively.")
+        tips.append("Use pest control methods or tools.")
     return tips
 
 # --- Prediction ---
@@ -117,40 +118,50 @@ else:
     prediction = model.predict(input_encoded)[0]
     proba = model.predict_proba(input_encoded)[0]
 
-# --- Results ---
+# --- Display results ---
 st.subheader("Prediction Result")
 if prediction == "Yes":
-    st.success(f"✅ Likely to repay the loan. (Confidence: {round(max(proba)*100, 2)}%)")
+    st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {round(max(proba)*100, 2)}%)")
 else:
-    st.error(f"⚠️ Unlikely to repay the loan. (Confidence: {round(max(proba)*100, 2)}%)")
+    st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {round(max(proba)*100, 2)}%)")
     st.markdown("### 💡 Tips to Improve Loan Eligibility")
     for tip in get_improvement_tips(input_df.iloc[0]):
         st.markdown(f"- {tip}")
 
-# --- Dashboard ---
+# --- Download Result as CSV ---
+result_data = input_df.copy()
+result_data["Prediction"] = prediction
+result_data["Confidence (%)"] = round(max(proba) * 100, 2)
+if prediction == "No":
+    result_data["Tips"] = "; ".join(get_improvement_tips(input_df.iloc[0]))
+else:
+    result_data["Tips"] = "Eligible - No tips needed."
+
+csv = result_data.to_csv(index=False).encode("utf-8")
+st.download_button(
+    label="📥 Download Prediction Result",
+    data=csv,
+    file_name="loan_prediction_result.csv",
+    mime="text/csv"
+)
+
+# --- Data Exploration Section ---
 st.markdown("---")
 st.subheader("📊 Farmer Dataset Overview")
 
-# Select vars for visualization
+# Interactive plot
 st.markdown("### Visualize Any Two Variables")
 var_x = st.selectbox("Select X-axis variable", df.columns)
-var_color = st.selectbox("Select color group (e.g., Debt, Gender)", df.columns)
+var_color = st.selectbox("Select color group (e.g., Debt, Gender, etc.)", df.columns)
 
 fig = px.histogram(df, x=var_x, color=var_color, barmode='group',
                    title=f"{var_x} grouped by {var_color}",
                    category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)})
 st.plotly_chart(fig, use_container_width=True)
 
-# Feature importance
-st.markdown("### 🔍 Feature Importance")
-feat_importance = model.feature_importances_
-feat_df = pd.DataFrame({'Feature': X.columns, 'Importance': feat_importance})
-fig2 = px.bar(feat_df.sort_values('Importance', ascending=False), x='Importance', y='Feature', orientation='h')
-st.plotly_chart(fig2, use_container_width=True)
-
-# Target summary
+# Summary count
 st.markdown("### Target Variable Distribution")
 st.bar_chart(df[target_col].value_counts())
 
 st.markdown("---")
-st.markdown("Use the form to input farmer details and explore insights to improve financial eligibility.")
+st.markdown("This app predicts whether a farmer will repay a loan based on various factors. Use the sidebar to input farmer details and explore relationships in the dataset.")
