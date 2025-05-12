@@ -11,7 +11,7 @@ import seaborn as sns
 # Load data
 @st.cache_data
 def load_data():
-    df = pd.read_excel(""C:\Users\HP\Downloads\loan_features_tables.xlsx"")  # Update with your file name
+    df = pd.read_excel(""loan_features_tables.xlsx"")  # Update with your file name
     return df
 
 df = load_data()
