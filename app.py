@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
 import plotly.express as px
+import plotly.graph_objects as go
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
@@ -95,8 +96,7 @@ def get_improvement_tips(row):
     if row.get("Invest Freq", "") not in ["Always", "Sometimes"]:
         tips.append("Increase frequency of investing.")
     if row.get("Avg Income Level", "") not in [
-        "N215,001 - N315,000 per month", "Above N315,000 per month"
-    ]:
+        "N215,001 - N315,000 per month", "Above N315,000 per month"]:
         tips.append("Increase monthly income level.")
     if row.get("Own Agri Land", "") == "Do not own":
         tips.append("Consider acquiring agricultural land.")
@@ -139,7 +139,7 @@ else:
 
 csv = result_data.to_csv(index=False).encode("utf-8")
 st.download_button(
-    label="📥 Download Prediction Result",
+    label="📅 Download Prediction Result",
     data=csv,
     file_name="loan_prediction_result.csv",
     mime="text/csv"
@@ -149,19 +149,26 @@ st.download_button(
 st.markdown("---")
 st.subheader("📊 Farmer Dataset Overview")
 
-# Interactive plot
+# Dynamic Visuals
 st.markdown("### Visualize Any Two Variables")
-var_x = st.selectbox("Select X-axis variable", df.columns)
-var_color = st.selectbox("Select color group (e.g., Debt, Gender, etc.)", df.columns)
+var_x = st.selectbox("X-axis", df.columns)
+var_color = st.selectbox("Group by (Color)", df.columns)
 
 fig = px.histogram(df, x=var_x, color=var_color, barmode='group',
-                   title=f"{var_x} grouped by {var_color}",
-                   category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)})
+                   title=f"{var_x} grouped by {var_color}")
 st.plotly_chart(fig, use_container_width=True)
 
-# Summary count
-st.markdown("### Target Variable Distribution")
-st.bar_chart(df[target_col].value_counts())
+# Pie Chart
+st.markdown("### Distribution of Loan Repayment (Pie Chart)")
+pie_fig = px.pie(df, names=target_col, title="Loan Repayment Distribution")
+st.plotly_chart(pie_fig, use_container_width=True)
 
-st.markdown("---")
-st.markdown("This app predicts whether a farmer will repay a loan based on various factors. Use the sidebar to input farmer details and explore relationships in the dataset.")
+# Feature Importance
+st.markdown("### 🔍 Feature Importance: What Influences Loan Repayment Most")
+importances = model.feature_importances_
+feat_df = pd.DataFrame({"Feature": X.columns, "Importance": importances})
+feat_df = feat_df.sort_values(by="Importance", ascending=False)
+
+importance_fig = px.bar(feat_df.head(10), x="Importance", y="Feature", orientation="h",
+                        title="Top 10 Influential Features")
+st.plotly_chart(importance_fig, use_container_width=True)
