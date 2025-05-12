@@ -22,7 +22,7 @@ possible_target_names = [col for col in df.columns if col.strip().lower() == 'de
 if possible_target_names:
     target_col = possible_target_names[0]
 else:
-    st.error("❌ Error: Column 'Debt' not found in the dataset!")
+    st.error("\u274c Error: Column 'Debt' not found in the dataset!")
     st.write("Available columns:", list(df.columns))
     st.stop()
 
@@ -41,11 +41,11 @@ model = RandomForestClassifier(random_state=42)
 model.fit(X_encoded, y)
 
 # --- UI Header ---
-st.title("💸 Farmer Loan Repayment Predictor")
+st.title("\ud83d\udcb8 Farmer Loan Repayment Predictor")
 st.markdown("Use this tool to predict whether a farmer is likely to repay a loan based on demographic and economic data.")
 
 # --- Sidebar inputs ---
-st.sidebar.header("📋 Enter Farmer Details")
+st.sidebar.header("\ud83d\udcdc Enter Farmer Details")
 
 def user_input():
     input_data = {}
@@ -61,13 +61,13 @@ input_df = user_input()
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-# --- Custom compulsory conditions for eligibility ---
-def meets_repayment_rules(row_df):
+# --- Eligibility function ---
+def is_eligible(row_df):
     row = row_df.iloc[0]
     return (
         row.get("Age", 0) >= 21 and
-        row.get("Debt", "Yes") == "No" and
         row.get("BVN", "No") == "Yes" and
+        row.get("Debt", "Yes") == "No" and
         row.get("Tax Invoice", "No") == "Yes" and
         row.get("Avg Income Level", "") in [
             "N115,001 - N215,000 per month",
@@ -77,52 +77,60 @@ def meets_repayment_rules(row_df):
     )
 
 # --- Prediction ---
-if meets_repayment_rules(input_df):
-    prediction = "Yes"
-    proba = [0.01, 0.99]
+st.subheader("\ud83d\udd2e Prediction Result")
+if not is_eligible(input_df):
+    st.warning("\ud83d\udeab This farmer **does not meet the required eligibility conditions** for prediction:")
+    st.markdown("""
+    - Age 21 or above  
+    - BVN is provided  
+    - No existing debt  
+    - Has Tax Invoice  
+    - Income level above \u20a6115,000/month  
+    """)
+    st.error("\u274c This farmer is **not likely to repay** the loan based on missing mandatory criteria.")
 else:
     prediction = model.predict(input_encoded)[0]
     proba = model.predict_proba(input_encoded)[0]
+    confidence = round(max(proba) * 100, 2)
 
-# --- Display prediction ---
-st.subheader("🔮 Prediction Result")
-confidence = round(max(proba) * 100, 2)
+    if prediction == "Yes":
+        st.success(f"\u2705 This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
+    else:
+        st.error(f"\u26a0\ufe0f This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
 
-if prediction == "Yes":
-    st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
-else:
-    st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
-
-# --- Download prediction result ---
-result_df = input_df.copy()
-result_df["Prediction"] = prediction
-result_df["Confidence (%)"] = confidence
-csv = result_df.to_csv(index=False).encode()
-st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+    result_df = input_df.copy()
+    result_df["Prediction"] = prediction
+    result_df["Confidence (%)"] = confidence
+    csv = result_df.to_csv(index=False).encode()
+    st.download_button("\ud83d\udcc5 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
 
 # --- Visualization ---
 st.markdown("---")
-st.subheader("📊 Compare Three Variables")
+st.subheader("\ud83d\udcca Compare Variables")
 
-var_x = st.selectbox("Select X-axis Variable", df.columns, key="x")
-var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col), key="color")
-var_facet = st.selectbox("Split by (facet column)", df.columns, key="facet")
+chart_type = st.selectbox("Choose Chart Type", ["Histogram", "Boxplot", "Scatter"])
+var_x = st.selectbox("X-axis Variable", df.columns, index=0)
+var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col))
+var_y = st.selectbox("Y-axis Variable (if applicable)", df.columns, index=1)
 
-fig = px.histogram(
-    df,
-    x=var_x,
-    color=var_color,
-    facet_col=var_facet,
-    barmode='group',
-    title=f"{var_x} grouped by {var_color} and split by {var_facet}",
-    color_discrete_map={"Yes": "blue", "No": "red"},
-    category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
-)
-fig.update_layout(height=600)
+if chart_type == "Histogram":
+    fig = px.histogram(
+        df,
+        x=var_x,
+        color=var_color,
+        barmode='group',
+        color_discrete_map={"Yes": "blue", "No": "red"},
+        category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
+    )
+elif chart_type == "Boxplot":
+    fig = px.box(df, x=var_x, y=var_y, color=var_color, color_discrete_map={"Yes": "blue", "No": "red"})
+elif chart_type == "Scatter":
+    fig = px.scatter(df, x=var_x, y=var_y, color=var_color, color_discrete_map={"Yes": "blue", "No": "red"})
+
 st.plotly_chart(fig, use_container_width=True)
 
 # --- Feature importance ---
-st.subheader("🔍 Top Features Influencing Repayment")
+st.subheader("\ud83d\udd0d Top Features Influencing Repayment")
 importances = model.feature_importances_
 importance_df = pd.DataFrame({
     "Feature": X.columns,
@@ -142,16 +150,17 @@ st.plotly_chart(fig_imp, use_container_width=True)
 
 # --- Tips Section ---
 st.markdown("---")
-st.subheader("💡 Tips to Improve Loan Eligibility")
+st.subheader("\ud83d\udca1 Tips to Improve Loan Eligibility")
+
 st.markdown("""
 Improving your eligibility for agricultural loans is essential for building trust with lenders. Here are some tips:
 
-- 📄 **Submit complete documentation**: Including Voter’s Card, BVN, Tax Invoice, and Tax Clearance Certificate.
-- 💼 **Maintain steady income**: Aim for consistent income above ₦115,000/month.
-- 🌿 **Invest in your farm**: Frequent reinvestment in tools and land boosts credibility.
-- 🏡 **Own agricultural property**: Owning land and mechanized tools shows capacity to scale.
-- 📘 **Continue learning**: Completing secondary education or beyond helps improve eligibility.
-- 🛠️ **Control risks**: Reduce crop loss due to pests and drought by using modern methods.
+- \ud83d\udcc4 **Submit complete documentation**: Including Voter’s Card, BVN, Tax Invoice, and Tax Clearance Certificate.
+- \ud83d\udcbc **Maintain steady income**: Aim for consistent income over ₦215,000/month.
+- \ud83c\udf3f **Invest in your farm**: Frequent reinvestment in tools and land boosts credibility.
+- \ud83c\udfe1 **Own agricultural property**: Owning land and mechanized tools shows capacity to scale.
+- \ud83d\udcd8 **Continue learning**: Completing secondary education or beyond helps improve eligibility.
+- \u2692\ufe0f **Control risks**: Reduce crop loss due to pests and drought by using modern methods.
 """)
 
 # --- Footer ---
