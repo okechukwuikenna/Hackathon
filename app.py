@@ -6,7 +6,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
 import plotly.express as px
-import io
 
 # --- Page Configuration ---
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
@@ -90,7 +89,7 @@ else:
     proba = model.predict_proba(input_encoded)[0]
 
 # --- Display Prediction ---
-st.subheader("Prediction Result")
+st.subheader("🔮 Prediction Result")
 confidence = round(max(proba) * 100, 2)
 if prediction == "Yes":
     st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
@@ -109,25 +108,21 @@ st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_
 st.markdown("---")
 st.subheader("📊 Farmer Dataset Overview")
 
-# --- Tips for Improving Eligibility ---
-with st.expander("💡 Tips to Improve Loan Eligibility"):
-    st.markdown("""
-- **Ensure official documentation**: Provide Voter's Card, BVN, Tax Invoice, and Tax Clearance Certificate.
-- **Increase income levels**: Consistent income above ₦215,000/month boosts chances.
-- **Invest regularly**: Farmers who invest in their farms 'Always' or 'Sometimes' are more eligible.
-- **Own land and mechanized tools**: Ownership reflects commitment and capacity.
-- **Stay educated**: Secondary education or above is beneficial.
-- **Prevent farm risks**: Avoid drought damage and pest infestations through early interventions.
-    """)
+# --- Visualizations ---
+st.markdown("### 📈 Explore Data Patterns")
 
-# --- Visualization Section ---
-st.markdown("### 📈 Visualize Any Two Variables")
 var_x = st.selectbox("Select X-axis variable", df.columns, index=0)
-var_color = st.selectbox("Select color group", df.columns, index=1)
+var_color = st.selectbox("Select color grouping", df.columns, index=1)
 
-fig = px.histogram(df, x=var_x, color=var_color, barmode='group',
-                   title=f"{var_x} grouped by {var_color}",
-                   category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)})
+fig = px.histogram(
+    df, 
+    x=var_x, 
+    color=var_color, 
+    barmode='group',
+    title=f"{var_x} grouped by {var_color}",
+    color_discrete_sequence=px.colors.qualitative.Pastel,
+    category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
+)
 st.plotly_chart(fig, use_container_width=True)
 
 # --- Target Distribution ---
@@ -135,16 +130,39 @@ st.markdown("### 📊 Debt Distribution")
 st.bar_chart(df[target_col].value_counts())
 
 # --- Feature Importance ---
-st.markdown("### 🔍 Feature Importance")
+st.markdown("### 🔍 Top Features Influencing Repayment")
 importances = model.feature_importances_
 importance_df = pd.DataFrame({
     "Feature": X.columns,
     "Importance": importances
 }).sort_values(by="Importance", ascending=False)
 
-fig_imp = px.bar(importance_df, x="Importance", y="Feature", orientation='h', title="Top Features Influencing Repayment")
+fig_imp = px.bar(
+    importance_df, 
+    x="Importance", 
+    y="Feature", 
+    orientation='h', 
+    title="Feature Importance",
+    color="Importance", 
+    color_continuous_scale="Agsunset"
+)
 st.plotly_chart(fig_imp, use_container_width=True)
 
-# --- End Note ---
+# --- Tips for Farmers ---
 st.markdown("---")
-st.markdown("This app predicts whether a farmer will repay a loan based on various personal and agricultural indicators. Use the sidebar to input farmer details and explore data insights.")
+st.subheader("💡 Tips to Improve Loan Eligibility")
+
+st.markdown("""
+Improving your eligibility for loan repayment programs can significantly boost your chances of approval. Below are key factors to consider:
+
+- 📄 **Provide complete documentation**: Ensure your **Voter’s Card**, **BVN**, **Tax Invoice**, and **Tax Clearance Certificate** are available.
+- 💼 **Stable income**: Try to maintain a regular income level of at least ₦215,000 per month.
+- 🌱 **Farm investment**: Regular investment in your farm (tools, seeds, irrigation) shows seriousness and commitment.
+- 🏠 **Own agricultural assets**: Land and mechanized tools enhance reliability in farming.
+- 🎓 **Education counts**: Farmers with at least secondary education have higher chances.
+- 🛡️ **Reduce risk factors**: Minimize drought damage and pest infestation using proper farming techniques and early preparation.
+""")
+
+# --- Footer ---
+st.markdown("---")
+st.markdown("This app predicts whether a farmer will repay a loan based on personal, financial, and agricultural indicators. Use the sidebar to explore different farmer scenarios and visualize trends in the dataset.")
