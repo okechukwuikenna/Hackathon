@@ -1,25 +1,23 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import joblib
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
 import plotly.express as px
 
-# --- Page Configuration ---
+# --- Streamlit page setup ---
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
 
-# --- Load Data ---
+# --- Load data ---
 @st.cache_data
 def load_data():
     df = pd.read_excel("loan_features_tables.xlsx")
-    df.columns = df.columns.str.strip()  # Clean column names
+    df.columns = df.columns.str.strip()
     return df
 
 df = load_data()
 
-# --- Target Column Detection ---
+# --- Detect 'Debt' column ---
 possible_target_names = [col for col in df.columns if col.strip().lower() == 'debt']
 if possible_target_names:
     target_col = possible_target_names[0]
@@ -28,24 +26,26 @@ else:
     st.write("Available columns:", list(df.columns))
     st.stop()
 
-# --- Prepare Features and Encode ---
+# --- Prepare features ---
 X = df.drop(columns=[target_col])
 y = df[target_col]
+
+# --- Encode categorical columns ---
 categorical_cols = X.select_dtypes(include='object').columns.tolist()
 encoder = OrdinalEncoder()
 X_encoded = X.copy()
 X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
 
-# --- Train Model ---
+# --- Train model ---
 model = RandomForestClassifier(random_state=42)
 model.fit(X_encoded, y)
 
-# --- Streamlit UI ---
+# --- UI Header ---
 st.title("💸 Farmer Loan Repayment Predictor")
-st.markdown("Use this tool to predict whether a farmer is likely to repay a loan based on their demographics and economic activity.")
+st.markdown("Use this tool to predict whether a farmer is likely to repay a loan based on demographic and economic data.")
 
-# --- Sidebar: Farmer Input ---
-st.sidebar.header("Enter Farmer Details")
+# --- Sidebar inputs ---
+st.sidebar.header("📋 Enter Farmer Details")
 
 def user_input():
     input_data = {}
@@ -61,9 +61,9 @@ input_df = user_input()
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-# --- Custom Rule Logic ---
-def meets_repayment_rules(user_input_row):
-    row = user_input_row.iloc[0]
+# --- Custom rule to override prediction ---
+def meets_repayment_rules(row_df):
+    row = row_df.iloc[0]
     return (
         row.get("Age", 0) >= 25 and
         row.get("Debt", "Yes") == "No" and
@@ -88,49 +88,43 @@ else:
     prediction = model.predict(input_encoded)[0]
     proba = model.predict_proba(input_encoded)[0]
 
-# --- Display Prediction ---
+# --- Display prediction ---
 st.subheader("🔮 Prediction Result")
 confidence = round(max(proba) * 100, 2)
+
 if prediction == "Yes":
     st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
 else:
     st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
 
-# --- Download Results ---
+# --- Download prediction result ---
 result_df = input_df.copy()
 result_df["Prediction"] = prediction
-result_df["Confidence"] = confidence
+result_df["Confidence (%)"] = confidence
 
 csv = result_df.to_csv(index=False).encode()
 st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
 
-# --- Dashboard ---
+# --- Visualization ---
 st.markdown("---")
-st.subheader("📊 Farmer Dataset Overview")
+st.subheader("📊 Compare Variables")
 
-# --- Visualizations ---
-st.markdown("### 📈 Explore Data Patterns")
-
-var_x = st.selectbox("Select X-axis variable", df.columns, index=0)
-var_color = st.selectbox("Select color grouping", df.columns, index=1)
+var_x = st.selectbox("Select X-axis Variable", df.columns, index=0)
+var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col))
 
 fig = px.histogram(
-    df, 
-    x=var_x, 
-    color=var_color, 
+    df,
+    x=var_x,
+    color=var_color,
     barmode='group',
     title=f"{var_x} grouped by {var_color}",
-    color_discrete_sequence=px.colors.qualitative.Pastel,
+    color_discrete_map={"Yes": "blue", "No": "red"},
     category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
 )
 st.plotly_chart(fig, use_container_width=True)
 
-# --- Target Distribution ---
-st.markdown("### 📊 Debt Distribution")
-st.bar_chart(df[target_col].value_counts())
-
-# --- Feature Importance ---
-st.markdown("### 🔍 Top Features Influencing Repayment")
+# --- Feature importance ---
+st.subheader("🔍 Top Features Influencing Repayment")
 importances = model.feature_importances_
 importance_df = pd.DataFrame({
     "Feature": X.columns,
@@ -138,31 +132,31 @@ importance_df = pd.DataFrame({
 }).sort_values(by="Importance", ascending=False)
 
 fig_imp = px.bar(
-    importance_df, 
-    x="Importance", 
-    y="Feature", 
-    orientation='h', 
+    importance_df,
+    x="Importance",
+    y="Feature",
+    orientation='h',
     title="Feature Importance",
-    color="Importance", 
-    color_continuous_scale="Agsunset"
+    color="Importance",
+    color_continuous_scale="bluered"
 )
 st.plotly_chart(fig_imp, use_container_width=True)
 
-# --- Tips for Farmers ---
+# --- Tips Section ---
 st.markdown("---")
 st.subheader("💡 Tips to Improve Loan Eligibility")
 
 st.markdown("""
-Improving your eligibility for loan repayment programs can significantly boost your chances of approval. Below are key factors to consider:
+Improving your eligibility for agricultural loans is essential for building trust with lenders. Here are some tips:
 
-- 📄 **Provide complete documentation**: Ensure your **Voter’s Card**, **BVN**, **Tax Invoice**, and **Tax Clearance Certificate** are available.
-- 💼 **Stable income**: Try to maintain a regular income level of at least ₦215,000 per month.
-- 🌱 **Farm investment**: Regular investment in your farm (tools, seeds, irrigation) shows seriousness and commitment.
-- 🏠 **Own agricultural assets**: Land and mechanized tools enhance reliability in farming.
-- 🎓 **Education counts**: Farmers with at least secondary education have higher chances.
-- 🛡️ **Reduce risk factors**: Minimize drought damage and pest infestation using proper farming techniques and early preparation.
+- 📄 **Submit complete documentation**: Including Voter’s Card, BVN, Tax Invoice, and Tax Clearance Certificate.
+- 💼 **Maintain steady income**: Aim for consistent income over ₦215,000/month.
+- 🌿 **Invest in your farm**: Frequent reinvestment in tools and land boosts credibility.
+- 🏡 **Own agricultural property**: Owning land and mechanized tools shows capacity to scale.
+- 📘 **Continue learning**: Completing secondary education or beyond helps improve eligibility.
+- 🛠️ **Control risks**: Reduce crop loss due to pests and drought by using modern methods.
 """)
 
 # --- Footer ---
 st.markdown("---")
-st.markdown("This app predicts whether a farmer will repay a loan based on personal, financial, and agricultural indicators. Use the sidebar to explore different farmer scenarios and visualize trends in the dataset.")
+st.caption("Developed for farmer empowerment and financial inclusion.")
