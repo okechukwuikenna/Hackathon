@@ -17,13 +17,20 @@ def load_data():
 
 df = load_data()
 
-# Preprocessing
-categorical_cols = df.select_dtypes(include='object').columns.tolist()
+# Strip column names
+df.columns = df.columns.str.strip()
+
+# Define target
 target_col = 'Paying Borrowed'
 
+# Drop target and prepare X, y
 X = df.drop(columns=[target_col])
 y = df[target_col]
 
+# Get categorical columns from X (after dropping target)
+categorical_cols = X.select_dtypes(include='object').columns.tolist()
+
+# Encode
 encoder = OrdinalEncoder()
 X_encoded = X.copy()
 X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
