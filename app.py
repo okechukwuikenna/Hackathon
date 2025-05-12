@@ -1,14 +1,16 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import joblib
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
 import plotly.express as px
 
-# --- Streamlit page setup ---
+# --- Streamlit UI ---
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
 
-# --- Load data ---
+# Load data
 @st.cache_data
 def load_data():
     df = pd.read_excel("loan_features_tables.xlsx")
@@ -17,7 +19,7 @@ def load_data():
 
 df = load_data()
 
-# --- Detect 'Debt' column ---
+# Identify target column
 possible_target_names = [col for col in df.columns if col.strip().lower() == 'debt']
 if possible_target_names:
     target_col = possible_target_names[0]
@@ -26,26 +28,26 @@ else:
     st.write("Available columns:", list(df.columns))
     st.stop()
 
-# --- Prepare features ---
+# Prepare features and target
 X = df.drop(columns=[target_col])
 y = df[target_col]
 
-# --- Encode categorical columns ---
+# Encode categorical columns
 categorical_cols = X.select_dtypes(include='object').columns.tolist()
 encoder = OrdinalEncoder()
 X_encoded = X.copy()
 X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
 
-# --- Train model ---
+# Train model
 model = RandomForestClassifier(random_state=42)
 model.fit(X_encoded, y)
 
-# --- UI Header ---
+# --- Streamlit UI ---
 st.title("💸 Farmer Loan Repayment Predictor")
-st.markdown("Use this tool to predict whether a farmer is likely to repay a loan based on demographic and economic data.")
+st.markdown("Use this tool to predict whether a farmer is likely to repay a loan based on their demographics and economic activity.")
 
-# --- Sidebar inputs ---
-st.sidebar.header("📋 Enter Farmer Details")
+# Sidebar - Input form
+st.sidebar.header("Enter Farmer Details")
 
 def user_input():
     input_data = {}
@@ -61,9 +63,10 @@ input_df = user_input()
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-# --- Custom rule to override prediction ---
-def meets_repayment_rules(row_df):
-    row = row_df.iloc[0]
+# Custom rule for repayment
+
+def meets_repayment_rules(user_input_row):
+    row = user_input_row.iloc[0]
     return (
         row.get("Age", 0) >= 25 and
         row.get("Debt", "Yes") == "No" and
@@ -80,83 +83,91 @@ def meets_repayment_rules(row_df):
         row.get("Pest Infestation", "Yes") == "No"
     )
 
+# Eligibility rules
+
+def is_eligible(row_df):
+    row = row_df.iloc[0]
+    income_str = row.get("Avg Income Level", "")
+    income_levels = [
+        "Below N15,000 per month",
+        "N15,001 - N35,000 per month",
+        "N35,001 - N55,000 per month",
+        "N55,001 - N115,000 per month",
+        "N115,001 - N215,000 per month",
+        "N215,001 - N315,000 per month",
+        "Above N315,000 per month"
+    ]
+    min_required_index = income_levels.index("N115,001 - N215,000 per month")
+    user_index = income_levels.index(income_str) if income_str in income_levels else -1
+
+    return (
+        row.get("Age", 0) >= 21 and
+        row.get("BVN", "No") == "Yes" and
+        row.get("Debt", "Yes") == "No" and
+        row.get("Tax Invoice", "No") == "Yes" and
+        user_index >= min_required_index
+    )
+
 # --- Prediction ---
-if meets_repayment_rules(input_df):
-    prediction = "Yes"
-    proba = [0.01, 0.99]
+st.subheader("\ud83d\udd2e Prediction Result")
+
+if is_eligible(input_df):
+    if meets_repayment_rules(input_df):
+        prediction = "Yes"
+        proba = [0.01, 0.99]
+    else:
+        prediction = model.predict(input_encoded)[0]
+        proba = model.predict_proba(input_encoded)[0]
+
+    confidence = round(max(proba) * 100, 2)
+    if prediction == "Yes":
+        st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
+    else:
+        st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
+
+    # Download button
+    result_df = input_df.copy()
+    result_df["Prediction"] = prediction
+    result_df["Confidence (%)"] = confidence
+    csv = result_df.to_csv(index=False).encode()
+    st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
 else:
-    prediction = model.predict(input_encoded)[0]
-    proba = model.predict_proba(input_encoded)[0]
+    st.warning("🚫 The applicant does not meet the **minimum eligibility criteria** to assess loan risk.")
+    st.markdown("""
+**Required Conditions:**
+- Age **21 or older**
+- BVN must be **Yes**
+- Debt must be **No**
+- Tax Invoice must be **Yes**
+- Avg Income Level at least **₦115,001/month**
+""")
 
-# --- Display prediction ---
-st.subheader("🔮 Prediction Result")
-confidence = round(max(proba) * 100, 2)
-
-if prediction == "Yes":
-    st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
-else:
-    st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
-
-# --- Download prediction result ---
-result_df = input_df.copy()
-result_df["Prediction"] = prediction
-result_df["Confidence (%)"] = confidence
-
-csv = result_df.to_csv(index=False).encode()
-st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
-
-# --- Visualization ---
+# --- Dashboard ---
 st.markdown("---")
-st.subheader("📊 Compare Variables")
+st.subheader("📊 Farmer Dataset Overview")
 
-var_x = st.selectbox("Select X-axis Variable", df.columns, index=0)
-var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col))
+# Select variables to plot
+st.markdown("### Visualize Any Two Variables")
+var_x = st.selectbox("Select X-axis variable", df.columns)
+var_color = st.selectbox("Select color group (e.g., Debt, Gender, etc.)", df.columns)
 
 fig = px.histogram(
-    df,
-    x=var_x,
-    color=var_color,
-    barmode='group',
+    df, x=var_x, color=var_color, barmode='group',
     title=f"{var_x} grouped by {var_color}",
-    color_discrete_map={"Yes": "blue", "No": "red"},
+    color_discrete_sequence=px.colors.qualitative.Set1,
     category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
 )
 st.plotly_chart(fig, use_container_width=True)
 
-# --- Feature importance ---
-st.subheader("🔍 Top Features Influencing Repayment")
-importances = model.feature_importances_
-importance_df = pd.DataFrame({
-    "Feature": X.columns,
-    "Importance": importances
-}).sort_values(by="Importance", ascending=False)
-
-fig_imp = px.bar(
-    importance_df,
-    x="Importance",
-    y="Feature",
-    orientation='h',
-    title="Feature Importance",
-    color="Importance",
-    color_continuous_scale="bluered"
-)
-st.plotly_chart(fig_imp, use_container_width=True)
-
-# --- Tips Section ---
-st.markdown("---")
-st.subheader("💡 Tips to Improve Loan Eligibility")
-
-st.markdown("""
-Improving your eligibility for agricultural loans is essential for building trust with lenders. Here are some tips:
-
-- 📄 **Submit complete documentation**: Including Voter’s Card, BVN, Tax Invoice, and Tax Clearance Certificate.
-- 💼 **Maintain steady income**: Aim for consistent income over ₦215,000/month.
-- 🌿 **Invest in your farm**: Frequent reinvestment in tools and land boosts credibility.
-- 🏡 **Own agricultural property**: Owning land and mechanized tools shows capacity to scale.
-- 📘 **Continue learning**: Completing secondary education or beyond helps improve eligibility.
-- 🛠️ **Control risks**: Reduce crop loss due to pests and drought by using modern methods.
+# --- Loan Tips ---
+st.markdown("### 💡 Tips to Improve Loan Eligibility")
+st.info("""
+- Maintain accurate financial records and documents like **Tax Invoice** and **Tax Clearance**.
+- Register for a **BVN** if you haven't.
+- Ensure you have **no outstanding debt** before applying.
+- Increase monthly income through stable sources (target above ₦115,000).
+- Own agricultural land or mechanized tools to show farm capacity.
 """)
 
-# --- Footer ---
 st.markdown("---")
-st.caption("Developed for farmer empowerment and financial inclusion.")
+st.markdown("This app predicts whether a farmer will repay a loan based on various factors. Use the sidebar to input farmer details and explore relationships in the dataset.")
