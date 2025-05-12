@@ -130,7 +130,8 @@ if chart_type == "Bar":
         color=var_color,
         title=f"Bar Chart: {var_x} grouped by {var_color}",
         barmode='group',
-        color_discrete_map=color_map
+        color_discrete_map=color_map,
+        facet_col=var_facet if var_facet != "None" else None  # Only include facet if not "None"
     )
 
 elif chart_type == "Column":
@@ -140,14 +141,15 @@ elif chart_type == "Column":
         color=var_x,
         title=f"Column Chart: {var_color} vs {var_x}",
         barmode='group',
-        color_discrete_map=color_map
+        color_discrete_map=color_map,
+        facet_col=var_facet if var_facet != "None" else None  # Only include facet if not "None"
     )
 
 elif chart_type == "Scatter":
     fig = px.scatter(
         df,
         x=var_x,
-        y=var_facet,
+        y=var_facet if var_facet != "None" else var_x,  # Use var_x as fallback if var_facet is "None"
         color=var_color,
         title=f"Scatter Plot: {var_x} vs {var_facet} colored by {var_color}",
         color_discrete_map=color_map
@@ -157,7 +159,7 @@ elif chart_type == "Line":
     fig = px.line(
         df.sort_values(by=var_x),
         x=var_x,
-        y=var_facet,
+        y=var_facet if var_facet != "None" else var_x,  # Use var_x as fallback if var_facet is "None"
         color=var_color,
         title=f"Line Chart: {var_facet} over {var_x} grouped by {var_color}",
         color_discrete_map=color_map
@@ -201,7 +203,7 @@ elif chart_type == "Histogram":
         df,
         x=var_x,
         color=var_color,
-        facet_col=var_facet,
+        facet_col=var_facet if var_facet != "None" else None,  # Only include facet if not "None"
         barmode='group',
         title=f"Histogram: {var_x} grouped by {var_color} and split by {var_facet}",
         color_discrete_map=color_map,
@@ -225,6 +227,7 @@ elif chart_type == "Heatmap":
 if fig:
     fig.update_layout(height=600)
     st.plotly_chart(fig, use_container_width=True)
+
 
 # --- Feature importance ---
 st.subheader("🔍 Top Features Influencing Repayment")
