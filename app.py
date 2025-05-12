@@ -102,24 +102,75 @@ st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_
 
 # --- Visualization ---
 st.markdown("---")
-st.subheader("📊 Compare Three Variables")
+st.subheader("📊 Dynamic Variable Comparison")
 
 var_x = st.selectbox("Select X-axis Variable", df.columns, key="x")
 var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col), key="color")
 var_facet = st.selectbox("Split by (facet column)", df.columns, key="facet")
+chart_type = st.selectbox("Choose Chart Type", ["Bar", "Scatter", "Box", "Violin", "Pie"])
 
-fig = px.histogram(
-    df,
-    x=var_x,
-    color=var_color,
-    facet_col=var_facet,
-    barmode='group',
-    title=f"{var_x} grouped by {var_color} and split by {var_facet}",
-    color_discrete_map={"Yes": "blue", "No": "red"},
-    category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
-)
+# --- Dynamic chart rendering ---
+if chart_type == "Bar":
+    fig = px.histogram(
+        df,
+        x=var_x,
+        color=var_color,
+        facet_col=var_facet,
+        barmode='group',
+        title=f"{var_x} grouped by {var_color} and split by {var_facet}",
+        color_discrete_map={"Yes": "blue", "No": "red"},
+        category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
+    )
+
+elif chart_type == "Scatter":
+    fig = px.scatter(
+        df,
+        x=var_x,
+        y=var_facet,
+        color=var_color,
+        title=f"Scatter Plot of {var_x} vs {var_facet} colored by {var_color}",
+        color_discrete_map={"Yes": "blue", "No": "red"}
+    )
+
+elif chart_type == "Box":
+    fig = px.box(
+        df,
+        x=var_color,
+        y=var_x,
+        color=var_color,
+        title=f"Box Plot of {var_x} grouped by {var_color}",
+        color_discrete_map={"Yes": "blue", "No": "red"}
+    )
+
+elif chart_type == "Violin":
+    fig = px.violin(
+        df,
+        x=var_color,
+        y=var_x,
+        color=var_color,
+        box=True,
+        title=f"Violin Plot of {var_x} grouped by {var_color}",
+        color_discrete_map={"Yes": "blue", "No": "red"}
+    )
+
+elif chart_type == "Pie":
+    pie_data = df[var_color].value_counts().reset_index()
+    pie_data.columns = [var_color, 'Count']
+    fig = px.pie(
+        pie_data,
+        names=var_color,
+        values='Count',
+        title=f"Pie Chart of {var_color}",
+        color=var_color,
+        color_discrete_map={"Yes": "blue", "No": "red"}
+    )
+
+else:
+    fig = px.histogram(df, x=var_x)  # Fallback
+
 fig.update_layout(height=600)
 st.plotly_chart(fig, use_container_width=True)
+
 
 # --- Feature importance ---
 st.subheader("🔍 Top Features Influencing Repayment")
