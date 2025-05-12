@@ -42,9 +42,6 @@ X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
 model = RandomForestClassifier(random_state=42)
 model.fit(X_encoded, y)
 
-# --- Streamlit UI ---
-st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
-
 # Page title and description
 st.title("💸 Farmer Loan Repayment Predictor")
 st.markdown("""Use this tool to predict whether a farmer is likely to repay a loan based on their demographics and economic activity.""")
