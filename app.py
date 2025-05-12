@@ -24,7 +24,7 @@ df = load_data()
 df.columns = df.columns.str.strip()
 
 # Define target
-target_col = 'Debt'
+target_col = 'Paying Borrowed'
 
 # Drop target and prepare X, y
 X = df.drop(columns=[target_col])
