@@ -5,8 +5,8 @@ import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Load data
 @st.cache_data
@@ -94,41 +94,35 @@ col1, col2 = st.columns(2)
 # Income Level Distribution
 with col1:
     st.markdown("**Income Level Distribution**")
-    fig1, ax1 = plt.subplots(figsize=(8, 6))
-    sns.countplot(y='Avg Income Level', data=df, order=df['Avg Income Level'].value_counts().index, ax=ax1)
-    st.pyplot(fig1)
+    fig1 = px.bar(df, y='Avg Income Level', color='Paying Borrowed', title="Income Level Distribution")
+    st.plotly_chart(fig1)
 
 # Ownership of Agricultural Land
 with col2:
     st.markdown("**Ownership of Agricultural Land**")
-    fig2, ax2 = plt.subplots(figsize=(8, 6))
-    sns.countplot(data=df, x='Own Agri Land', hue='Paying Borrowed', ax=ax2)
-    st.pyplot(fig2)
+    fig2 = px.histogram(df, x='Own Agri Land', color='Paying Borrowed', title="Ownership of Agricultural Land")
+    st.plotly_chart(fig2)
 
 # Gender vs Loan Repayment
 st.subheader("Gender vs Loan Repayment")
-fig3, ax3 = plt.subplots(figsize=(8, 6))
-sns.countplot(data=df, x='Gender', hue='Paying Borrowed', ax=ax3)
-st.pyplot(fig3)
+fig3 = px.histogram(df, x='Gender', color='Paying Borrowed', title="Gender vs Loan Repayment")
+st.plotly_chart(fig3)
 
 # Education Level vs Loan Repayment
 st.subheader("Education Level vs Loan Repayment")
-fig4, ax4 = plt.subplots(figsize=(8, 6))
-sns.countplot(data=df, x='Educational Level', hue='Paying Borrowed', ax=ax4)
-plt.xticks(rotation=45, ha='right')
-st.pyplot(fig4)
+fig4 = px.histogram(df, x='Educational Level', color='Paying Borrowed', title="Education Level vs Loan Repayment")
+fig4.update_xaxes(tickangle=45)
+st.plotly_chart(fig4)
 
 # Drought Damage vs Loan Repayment
 st.subheader("Drought Damage vs Loan Repayment")
-fig5, ax5 = plt.subplots(figsize=(8, 6))
-sns.countplot(data=df, x='Drought Damage', hue='Paying Borrowed', ax=ax5)
-st.pyplot(fig5)
+fig5 = px.histogram(df, x='Drought Damage', color='Paying Borrowed', title="Drought Damage vs Loan Repayment")
+st.plotly_chart(fig5)
 
 # Pest Infestation vs Loan Repayment
 st.subheader("Pest Infestation vs Loan Repayment")
-fig6, ax6 = plt.subplots(figsize=(8, 6))
-sns.countplot(data=df, x='Pest Infestation', hue='Paying Borrowed', ax=ax6)
-st.pyplot(fig6)
+fig6 = px.histogram(df, x='Pest Infestation', color='Paying Borrowed', title="Pest Infestation vs Loan Repayment")
+st.plotly_chart(fig6)
 
 # --- End of Dashboard ---
 st.markdown("---")
