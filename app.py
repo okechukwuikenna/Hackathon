@@ -61,23 +61,19 @@ input_df = user_input()
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-# --- Custom rule to override prediction ---
+# --- Custom compulsory conditions for eligibility ---
 def meets_repayment_rules(row_df):
     row = row_df.iloc[0]
     return (
-        row.get("Age", 0) >= 25 and
+        row.get("Age", 0) >= 21 and
         row.get("Debt", "Yes") == "No" and
-        row.get("Voters Card", "No") == "Yes" and
         row.get("BVN", "No") == "Yes" and
         row.get("Tax Invoice", "No") == "Yes" and
-        row.get("Tax Clearance Cert", "No") == "Yes" and
-        row.get("Invest Freq", "") in ["Always", "Sometimes"] and
-        row.get("Avg Income Level", "") in ["N215,001 - N315,000 per month", "Above N315,000 per month"] and
-        row.get("Own Agri Land", "") != "Do not own" and
-        row.get("Own Agri Mech Tool", "") != "Do not own" and
-        row.get("Educational Level", "") not in ["No education", "Primary complete"] and
-        row.get("Drought Damage", "Yes") == "No" and
-        row.get("Pest Infestation", "Yes") == "No"
+        row.get("Avg Income Level", "") in [
+            "N115,001 - N215,000 per month",
+            "N215,001 - N315,000 per month",
+            "Above N315,000 per month"
+        ]
     )
 
 # --- Prediction ---
@@ -101,26 +97,28 @@ else:
 result_df = input_df.copy()
 result_df["Prediction"] = prediction
 result_df["Confidence (%)"] = confidence
-
 csv = result_df.to_csv(index=False).encode()
 st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
 
 # --- Visualization ---
 st.markdown("---")
-st.subheader("📊 Compare Variables")
+st.subheader("📊 Compare Three Variables")
 
-var_x = st.selectbox("Select X-axis Variable", df.columns, index=0)
-var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col))
+var_x = st.selectbox("Select X-axis Variable", df.columns, key="x")
+var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col), key="color")
+var_facet = st.selectbox("Split by (facet column)", df.columns, key="facet")
 
 fig = px.histogram(
     df,
     x=var_x,
     color=var_color,
+    facet_col=var_facet,
     barmode='group',
-    title=f"{var_x} grouped by {var_color}",
+    title=f"{var_x} grouped by {var_color} and split by {var_facet}",
     color_discrete_map={"Yes": "blue", "No": "red"},
     category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
 )
+fig.update_layout(height=600)
 st.plotly_chart(fig, use_container_width=True)
 
 # --- Feature importance ---
@@ -145,12 +143,11 @@ st.plotly_chart(fig_imp, use_container_width=True)
 # --- Tips Section ---
 st.markdown("---")
 st.subheader("💡 Tips to Improve Loan Eligibility")
-
 st.markdown("""
 Improving your eligibility for agricultural loans is essential for building trust with lenders. Here are some tips:
 
 - 📄 **Submit complete documentation**: Including Voter’s Card, BVN, Tax Invoice, and Tax Clearance Certificate.
-- 💼 **Maintain steady income**: Aim for consistent income over ₦215,000/month.
+- 💼 **Maintain steady income**: Aim for consistent income above ₦115,000/month.
 - 🌿 **Invest in your farm**: Frequent reinvestment in tools and land boosts credibility.
 - 🏡 **Own agricultural property**: Owning land and mechanized tools shows capacity to scale.
 - 📘 **Continue learning**: Completing secondary education or beyond helps improve eligibility.
