@@ -5,46 +5,38 @@ import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
-import plotly.express as px  # Import Plotly for interactive plots
+import plotly.express as px
 
 # --- Streamlit UI ---
-# Move set_page_config to the very top of your app
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
 
 # Load data
 @st.cache_data
 def load_data():
     df = pd.read_excel("loan_features_tables.xlsx")
-    df.columns = df.columns.str.strip()  # Remove leading/trailing spaces from column names
+    df.columns = df.columns.str.strip()  # Clean up column names
     return df
 
 df = load_data()
 
-# Debugging steps: Print columns to make sure they are correct
-st.write("Columns in the dataset:", df.columns)
+# DEBUG: Show columns
+# st.write("Raw column names:", list(df.columns))
 
-# Print first few rows to check the content
-st.write(df.head())
-
-# Strip column names again to be sure
-df.columns = df.columns.str.strip()
-
-# Correct the error: 'Debt' should replace 'Paying Borrowed'
-target_col = 'Debt'  # Changed from 'Paying Borrowed' to 'Debt'
-
-# Check if target column exists in the DataFrame before proceeding
-if target_col not in df.columns:
-    st.error(f"Error: Column '{target_col}' not found in the dataset!")
+# Try to automatically find the correct 'Debt' column name
+possible_target_names = [col for col in df.columns if col.strip().lower() == 'debt']
+if possible_target_names:
+    target_col = possible_target_names[0]
+else:
+    st.error("❌ Error: Column 'Debt' not found in the dataset!")
+    st.write("Available columns:", list(df.columns))
     st.stop()
 
-# Drop target and prepare X, y
-X = df.drop(columns=[target_col], errors='ignore')  # Use errors='ignore' to avoid KeyError
+# Prepare features and target
+X = df.drop(columns=[target_col])
 y = df[target_col]
 
-# Get categorical columns from X (after dropping target)
-categorical_cols = X.select_dtypes(include='object').columns.tolist()
-
 # Encode categorical columns
+categorical_cols = X.select_dtypes(include='object').columns.tolist()
 encoder = OrdinalEncoder()
 X_encoded = X.copy()
 X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
@@ -55,7 +47,7 @@ model.fit(X_encoded, y)
 
 # --- Streamlit UI ---
 st.title("💸 Farmer Loan Repayment Predictor")
-st.markdown("""Use this tool to predict whether a farmer is likely to repay a loan based on their demographics and economic activity.""")
+st.markdown("Use this tool to predict whether a farmer is likely to repay a loan based on their demographics and economic activity.")
 
 # Sidebar - Input form
 st.sidebar.header("Enter Farmer Details")
@@ -71,94 +63,60 @@ def user_input():
     return pd.DataFrame([input_data])
 
 input_df = user_input()
-
-# Encode input
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-# Function to determine if the farmer meets the repayment criteria
+# --- Custom rule to override prediction if conditions are met ---
 def meets_repayment_rules(user_input_row):
-    """Custom rule to classify a farmer as likely to repay."""
-    row = user_input_row.iloc[0]  # Single-row dataframe
+    row = user_input_row.iloc[0]
     return (
-        row["Age"] >= 25 and
-        row["Debt"] == "No" and  # Ensure Debt column is used here
-        row["Voters Card"] == "Yes" and
-        row["BVN"] == "Yes" and
-        row["Tax Invoice"] == "Yes" and
-        row["Tax Clearance Cert"] == "Yes" and
-        row["Invest Freq"] in ["Always", "Sometimes"] and
-        row["Avg Income Level"] in ["N215,001 - N315,000 per month", "Above N315,000 per month"] and
-        row["Own Agri Land"] != "Do not own" and
-        row["Own Agri Mech Tool"] != "Do not own" and
-        row["Educational Level"] not in ["No education", "Primary complete"] and
-        row["Drought Damage"] == "No" and
-        row["Pest Infestation"] == "No"
+        row.get("Age", 0) >= 25 and
+        row.get("Debt", "Yes") == "No" and
+        row.get("Voters Card", "No") == "Yes" and
+        row.get("BVN", "No") == "Yes" and
+        row.get("Tax Invoice", "No") == "Yes" and
+        row.get("Tax Clearance Cert", "No") == "Yes" and
+        row.get("Invest Freq", "") in ["Always", "Sometimes"] and
+        row.get("Avg Income Level", "") in ["N215,001 - N315,000 per month", "Above N315,000 per month"] and
+        row.get("Own Agri Land", "") != "Do not own" and
+        row.get("Own Agri Mech Tool", "") != "Do not own" and
+        row.get("Educational Level", "") not in ["No education", "Primary complete"] and
+        row.get("Drought Damage", "Yes") == "No" and
+        row.get("Pest Infestation", "Yes") == "No"
     )
 
-# Check if the user meets the rules for loan repayment
+# Prediction
 if meets_repayment_rules(input_df):
     prediction = "Yes"
-    proba = [0.01, 0.99]  # Override to high confidence
+    proba = [0.01, 0.99]
 else:
-    # Prediction from model if rules are not met
     prediction = model.predict(input_encoded)[0]
     proba = model.predict_proba(input_encoded)[0]
 
-# Prediction result
+# Output
 st.subheader("Prediction Result")
 if prediction == "Yes":
     st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {round(max(proba)*100, 2)}%)")
 else:
     st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {round(max(proba)*100, 2)}%)")
 
-# --- Dashboard section ---
+# --- Dashboard ---
 st.markdown("---")
 st.subheader("📊 Farmer Dataset Overview")
 
-col1, col2 = st.columns(2)
+# Select variables to plot
+st.markdown("### Visualize Any Two Variables")
+var_x = st.selectbox("Select X-axis variable", df.columns)
+var_color = st.selectbox("Select color group (e.g., Debt, Gender, etc.)", df.columns)
 
-# Income Level Distribution
-with col1:
-    st.markdown("**Income Level Distribution**")
-    fig1 = px.histogram(df, y='Avg Income Level', color='Avg Income Level', 
-                        title="Income Level Distribution", 
-                        category_orders={"Avg Income Level": sorted(df['Avg Income Level'].dropna().unique())})
-    st.plotly_chart(fig1)
+fig = px.histogram(df, x=var_x, color=var_color, barmode='group',
+                   title=f"{var_x} grouped by {var_color}",
+                   category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)})
+st.plotly_chart(fig, use_container_width=True)
 
-# Ownership of Agricultural Land
-with col2:
-    st.markdown("**Ownership of Agricultural Land**")
-    fig2 = px.histogram(df, x='Own Agri Land', color='Debt',  # Use 'Debt' for comparison
-                        title="Ownership of Agricultural Land vs Loan Repayment",
-                        barmode='stack')
-    st.plotly_chart(fig2)
+# Optional: Summary counts
+st.markdown("### Target Variable Distribution")
+st.bar_chart(df[target_col].value_counts())
 
-# Gender vs Loan Repayment
-st.subheader("Gender vs Loan Repayment")
-fig3 = px.histogram(df, x='Gender', color='Debt',  # Use 'Debt' for comparison
-                    title="Gender vs Loan Repayment", barmode='stack')
-st.plotly_chart(fig3)
-
-# Education Level vs Loan Repayment
-st.subheader("Education Level vs Loan Repayment")
-fig4 = px.histogram(df, x='Educational Level', color='Debt',  # Use 'Debt' for comparison
-                    title="Education Level vs Loan Repayment", 
-                    category_orders={"Educational Level": sorted(df['Educational Level'].dropna().unique())})
-st.plotly_chart(fig4)
-
-# Drought Damage vs Loan Repayment
-st.subheader("Drought Damage vs Loan Repayment")
-fig5 = px.histogram(df, x='Drought Damage', color='Debt',  # Use 'Debt' for comparison
-                    title="Drought Damage vs Loan Repayment", barmode='stack')
-st.plotly_chart(fig5)
-
-# Pest Infestation vs Loan Repayment
-st.subheader("Pest Infestation vs Loan Repayment")
-fig6 = px.histogram(df, x='Pest Infestation', color='Debt',  # Use 'Debt' for comparison
-                    title="Pest Infestation vs Loan Repayment", barmode='stack')
-st.plotly_chart(fig6)
-
-# --- End of Dashboard ---
 st.markdown("---")
-st.markdown("This app predicts whether a farmer will repay a loan based on various factors. Use the sidebar to input farmer details and view predictions and insights.")
+st.markdown("This app predicts whether a farmer will repay a loan based on various factors. Use the sidebar to input farmer details and explore relationships in the dataset.")
