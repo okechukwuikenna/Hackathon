@@ -8,37 +8,41 @@ from sklearn.ensemble import RandomForestClassifier
 import plotly.express as px  # Import Plotly for interactive plots
 
 # --- Streamlit UI ---
-# Move set_page_config to the very top of your app
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
 
 # Load data
 @st.cache_data
 def load_data():
     df = pd.read_excel("loan_features_tables.xlsx")
-    df.columns = df.columns.str.strip()  # Remove leading/trailing spaces from column names
+    df.columns = df.columns.str.strip()  # Strip any extra spaces
     return df
 
 df = load_data()
 
-# Strip column names
-df.columns = df.columns.str.strip()
+# Display column names for debugging
+st.write("Available columns in dataset:", df.columns.tolist())
 
-# Define target
-target_col = 'Debt'  # Changed to Debt instead of Paying Borrowed
+# Define target column
+target_col = 'Debt'
 
-# Drop target and prepare X, y
+# Check if 'Debt' exists in the dataset
+if target_col not in df.columns:
+    st.error(f"The '{target_col}' column is not present in the dataset. Please check the data and ensure it is included.")
+    st.stop()  # Stop further execution if the column is not found
+
+# Drop target column and prepare features
 X = df.drop(columns=[target_col])
 y = df[target_col]
 
-# Get categorical columns from X (after dropping target)
+# Get categorical columns from X
 categorical_cols = X.select_dtypes(include='object').columns.tolist()
 
-# Encode
+# Encode categorical columns
 encoder = OrdinalEncoder()
 X_encoded = X.copy()
 X_encoded[categorical_cols] = encoder.fit_transform(X[categorical_cols])
 
-# Train model
+# Train Random Forest model
 model = RandomForestClassifier(random_state=42)
 model.fit(X_encoded, y)
 
@@ -46,7 +50,7 @@ model.fit(X_encoded, y)
 st.title("💸 Farmer Loan Repayment Predictor")
 st.markdown("""Use this tool to predict whether a farmer is likely to repay a loan based on their demographics and economic activity.""")
 
-# Sidebar - Input form
+# Sidebar for user input
 st.sidebar.header("Enter Farmer Details")
 
 def user_input():
@@ -61,17 +65,16 @@ def user_input():
 
 input_df = user_input()
 
-# Encode input
+# Encode user input
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-# Function to determine if the farmer meets the repayment criteria
+# Custom rules for repayment prediction
 def meets_repayment_rules(user_input_row):
-    """Custom rule to classify a farmer as likely to repay."""
     row = user_input_row.iloc[0]  # Single-row dataframe
     return (
         row["Age"] >= 25 and
-        row["Debt"] == "No" and  # Changed to Debt
+        row["Debt"] == "No" and  # Ensure Debt column is used here
         row["Voters Card"] == "Yes" and
         row["BVN"] == "Yes" and
         row["Tax Invoice"] == "Yes" and
@@ -85,16 +88,15 @@ def meets_repayment_rules(user_input_row):
         row["Pest Infestation"] == "No"
     )
 
-# Check if the user meets the rules for loan repayment
+# Check if user input meets repayment rules
 if meets_repayment_rules(input_df):
     prediction = "Yes"
     proba = [0.01, 0.99]  # Override to high confidence
 else:
-    # Prediction from model if rules are not met
     prediction = model.predict(input_encoded)[0]
     proba = model.predict_proba(input_encoded)[0]
 
-# Prediction result
+# Display prediction result
 st.subheader("Prediction Result")
 if prediction == "Yes":
     st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {round(max(proba)*100, 2)}%)")
@@ -118,33 +120,33 @@ with col1:
 # Ownership of Agricultural Land
 with col2:
     st.markdown("**Ownership of Agricultural Land**")
-    fig2 = px.histogram(df, x='Own Agri Land', color='Debt',  # Changed to Debt
+    fig2 = px.histogram(df, x='Own Agri Land', color='Debt',  # Use 'Debt' column here
                         title="Ownership of Agricultural Land vs Loan Repayment",
                         barmode='stack')
     st.plotly_chart(fig2)
 
 # Gender vs Loan Repayment
 st.subheader("Gender vs Loan Repayment")
-fig3 = px.histogram(df, x='Gender', color='Debt',  # Changed to Debt
+fig3 = px.histogram(df, x='Gender', color='Debt',  # Use 'Debt' column here
                     title="Gender vs Loan Repayment", barmode='stack')
 st.plotly_chart(fig3)
 
 # Education Level vs Loan Repayment
 st.subheader("Education Level vs Loan Repayment")
-fig4 = px.histogram(df, x='Educational Level', color='Debt',  # Changed to Debt
+fig4 = px.histogram(df, x='Educational Level', color='Debt',  # Use 'Debt' column here
                     title="Education Level vs Loan Repayment", 
                     category_orders={"Educational Level": sorted(df['Educational Level'].dropna().unique())})
 st.plotly_chart(fig4)
 
 # Drought Damage vs Loan Repayment
 st.subheader("Drought Damage vs Loan Repayment")
-fig5 = px.histogram(df, x='Drought Damage', color='Debt',  # Changed to Debt
+fig5 = px.histogram(df, x='Drought Damage', color='Debt',  # Use 'Debt' column here
                     title="Drought Damage vs Loan Repayment", barmode='stack')
 st.plotly_chart(fig5)
 
 # Pest Infestation vs Loan Repayment
 st.subheader("Pest Infestation vs Loan Repayment")
-fig6 = px.histogram(df, x='Pest Infestation', color='Debt',  # Changed to Debt
+fig6 = px.histogram(df, x='Pest Infestation', color='Debt',  # Use 'Debt' column here
                     title="Pest Infestation vs Loan Repayment", barmode='stack')
 st.plotly_chart(fig6)
 
