@@ -1,0 +1,63 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
+import joblib
+
+# Load dataset
+df = pd.read_excel("farmer_loan_data.xlsx")
+
+# Preprocessing - Convert categorical columns to numerical using LabelEncoder or OneHotEncoder
+label_columns = ['Voters Card', 'BVN', 'Tax Invoice', 'Tax Clearance Cert', 'Invest Freq', 
+                 'Borrowed Money', 'Debt', 'Own Agri Land', 'Own Agri Mech Tool', 
+                 'Gender', 'Drought Damage', 'Pest Infestation', 'Source of Income']
+
+label_encoder = LabelEncoder()
+
+# Apply label encoding to categorical columns
+for col in label_columns:
+    df[col] = label_encoder.fit_transform(df[col])
+
+# Handle 'Avg Income Level' (it needs to be converted to a numerical value)
+income_mapping = {
+    'No income': 0,
+    'Below N15,000 per month': 1,
+    'N15,001 - N35,000 per month': 2,
+    'N35,001 - N55,000 per month': 3,
+    'N55,001 - N75,000 per month': 4,
+    'N75,001 - N95,000 per month': 5,
+    'N95,001 - N115,000 per month': 6,
+    'N115,001 - N135,000 per month': 7,
+    'N135,001 - N155,000 per month': 8,
+    'N155,001 - N175,000 per month': 9,
+    'N175,001 - N195,000 per month': 10,
+    'N195,001 - N215,000 per month': 11,
+    'N215,001 - N235,000 per month': 12,
+    'N235,001 - N255,000 per month': 13,
+    'N255,001 - N275,000 per month': 14,
+    'N275,001 - 295,000 per month': 15,
+    'N295,001 - N315,000 per month': 16,
+    'Above N315,000 per month': 17
+}
+
+df['Avg Income Level'] = df['Avg Income Level'].map(income_mapping)
+
+# Feature and Target
+X = df.drop('Debt', axis=1)  # All columns except the target
+y = df['Debt']  # Target variable (whether the loan is paid)
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Initialize the model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+
+# Train the model
+model.fit(X_train, y_train)
+
+# Save the trained model
+joblib.dump(model, 'model.pkl')
+
+# Print the model accuracy
+accuracy = model.score(X_test, y_test)
+print(f'Model accuracy: {accuracy:.2f}')
