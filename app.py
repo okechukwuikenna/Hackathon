@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
 import plotly.express as px
+import random
 
 # --- Streamlit page setup ---
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
