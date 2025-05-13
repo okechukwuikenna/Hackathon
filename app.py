@@ -68,12 +68,30 @@ input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 # --- Custom compulsory conditions for eligibility ---
 def meets_repayment_rules(row_df):
     row = row_df.iloc[0]
+    
+    # Debug: print each condition's value to verify what's going on
+    st.write("Debug: Checking Eligibility for Row", row)
+    
+    age = row.get("Age", 0)
+    debt = row.get("Debt", "Yes")
+    bvn = row.get("BVN", "No")
+    tax_invoice = row.get("Tax Invoice", "No")
+    avg_income = row.get("Avg Income Level", "")
+    
+    st.write("Debug: Eligibility Conditions")
+    st.write(f"Age: {age} >= 21 -> {age >= 21}")
+    st.write(f"Debt: {debt} == No -> {debt == 'No'}")
+    st.write(f"BVN: {bvn} == Yes -> {bvn == 'Yes'}")
+    st.write(f"Tax Invoice: {tax_invoice} == Yes -> {tax_invoice == 'Yes'}")
+    st.write(f"Avg Income Level: {avg_income} in ['N115,001 - N215,000 per month', 'N215,001 - N315,000 per month', 'Above N315,000 per month'] -> {avg_income in ['N115,001 - N215,000 per month', 'N215,001 - N315,000 per month', 'Above N315,000 per month']}")
+    
+    # Return whether all conditions are met
     return (
-        row.get("Age", 0) >= 21 and
-        row.get("Debt", "Yes") == "No" and
-        row.get("BVN", "No") == "Yes" and
-        row.get("Tax Invoice", "No") == "Yes" and
-        row.get("Avg Income Level", "") in [
+        age >= 21 and
+        debt == "No" and
+        bvn == "Yes" and
+        tax_invoice == "Yes" and
+        avg_income in [
             "N115,001 - N215,000 per month",
             "N215,001 - N315,000 per month",
             "Above N315,000 per month"
