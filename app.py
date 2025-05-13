@@ -77,9 +77,9 @@ def meets_repayment_rules(row_df):
     )
 
 # --- Prediction ---
-if meets_repayment_rules(input_df):
-    prediction = "Yes"
-    proba = [0.01, 0.99]
+if not meets_repayment_rules(input_df):
+    prediction = "Not Eligible"
+    proba = [1.0, 0.0]  # Force 100% confidence in ineligibility
 else:
     prediction = model.predict(input_encoded)[0]
     proba = model.predict_proba(input_encoded)[0]
@@ -90,8 +90,17 @@ confidence = round(max(proba) * 100, 2)
 
 if prediction == "Yes":
     st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
-else:
+elif prediction == "No":
     st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
+elif prediction == "Not Eligible":
+    st.warning("🚫 This farmer is **not eligible** to be assessed for loan repayment based on required conditions:")
+    st.markdown("""
+    **Minimum Eligibility Requirements:**
+    - ✅ Age must be at least 21  
+    - ✅ BVN must be **Yes**  
+    - ✅ Tax Invoice must be **Yes**  
+    - ✅ Avg Income must be **above ₦115,000/month**
+    """)
 
 # --- Download prediction result ---
 result_df = input_df.copy()
