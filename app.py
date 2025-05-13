@@ -98,7 +98,7 @@ if st.button("🔍 Predict"):
         - Age must be at least 21  
         - BVN must be **Yes**  
         - Tax Invoice must be **Yes**  
-        - Avg Income must be **above ₦115,000/month**
+        - Avg Income level must be **above ₦115,000/month**
         """)
     else:
         prediction = model.predict(input_encoded)[0]
