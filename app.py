@@ -54,38 +54,23 @@ def user_input():
             options = sorted(df[col].dropna().unique())
             input_data[col] = st.sidebar.selectbox(col, options)
         else:
-            input_data[col] = st.sidebar.number_input(col, min_value=0, step=1)
+            max_val = int(df[col].max()) if pd.api.types.is_numeric_dtype(df[col]) else 100
+            input_data[col] = st.sidebar.slider(col, min_value=0, max_value=max_val, value=0)
     return pd.DataFrame([input_data])
 
 input_df = user_input()
-
-# --- Debug: Show user inputs for rule check ---
-st.write("Debug: User Inputs for Rule Check", input_df)  # Debugging line to see what the user entered
-
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
 # --- Custom compulsory conditions for eligibility ---
 def meets_repayment_rules(row_df):
     row = row_df.iloc[0]
-    
-    # Debug: print each condition's value to verify what's going on
-    st.write("Debug: Checking Eligibility for Row", row)
-    
     age = row.get("Age", 0)
     debt = row.get("Debt", "Yes")
     bvn = row.get("BVN", "No")
     tax_invoice = row.get("Tax Invoice", "No")
     avg_income = row.get("Avg Income Level", "")
-    
-    st.write("Debug: Eligibility Conditions")
-    st.write(f"Age: {age} >= 21 -> {age >= 21}")
-    st.write(f"Debt: {debt} == No -> {debt == 'No'}")
-    st.write(f"BVN: {bvn} == Yes -> {bvn == 'Yes'}")
-    st.write(f"Tax Invoice: {tax_invoice} == Yes -> {tax_invoice == 'Yes'}")
-    st.write(f"Avg Income Level: {avg_income} in ['N115,001 - N215,000 per month', 'N215,001 - N315,000 per month', 'Above N315,000 per month'] -> {avg_income in ['N115,001 - N215,000 per month', 'N215,001 - N315,000 per month', 'Above N315,000 per month']}")
-    
-    # Return whether all conditions are met
+
     return (
         age >= 21 and
         debt == "No" and
@@ -102,11 +87,9 @@ def meets_repayment_rules(row_df):
 st.subheader("🔮 Prediction Result")
 
 if st.button("🔍 Predict"):
-    # Encode the input first (important)
     input_encoded = input_df.copy()
     input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-    # Check eligibility based on original (non-encoded) input
     if not meets_repayment_rules(input_df):
         prediction = "Not Eligible"
         proba = [1.0, 0.0]
@@ -116,7 +99,8 @@ if st.button("🔍 Predict"):
         - Age must be at least 21  
         - BVN must be **Yes**  
         - Tax Invoice must be **Yes**  
-        - Avg Income Level must be **above ₦115,000/month**
+        - Avg Income Level must be **above ₦115,000/month**  
+        - Debt status must be **No**
         """)
     else:
         prediction = model.predict(input_encoded)[0]
@@ -130,13 +114,11 @@ if st.button("🔍 Predict"):
         else:
             st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
 
-    # --- Download prediction result ---
     result_df = input_df.copy()
     result_df["Prediction"] = prediction
     result_df["Confidence (%)"] = round(max(proba) * 100, 2)
     csv = result_df.to_csv(index=False).encode()
     st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
-
 
 import random
 
@@ -152,7 +134,6 @@ chart_type = st.selectbox(
     ["Bar", "Column", "Scatter", "Line", "Box", "Violin", "Pie", "Donut", "Histogram", "Heatmap"]
 )
 
-# Generate a random color palette
 unique_values = df[var_color].dropna().unique()
 color_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Set3 + px.colors.qualitative.Pastel
 random.shuffle(color_palette)
@@ -160,7 +141,6 @@ color_map = {val: color_palette[i % len(color_palette)] for i, val in enumerate(
 
 fig = None
 
-# --- Dynamic chart rendering ---
 if chart_type == "Bar":
     fig = px.bar(
         df,
@@ -274,11 +254,9 @@ elif chart_type == "Heatmap":
         st.warning("⚠️ Heatmap requires only numeric features.")
         st.write(str(e))
 
-# --- Show chart ---
 if fig:
     fig.update_layout(height=600)
     st.plotly_chart(fig, use_container_width=True)
-
 
 # --- Feature importance ---
 st.subheader("🔍 Top Features Influencing Repayment")
