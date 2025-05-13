@@ -17,12 +17,12 @@ def load_data():
 
 df = load_data()
 
-# --- Detect 'Debt' column ---
-possible_target_names = [col for col in df.columns if col.strip().lower() == 'debt']
+# --- Detect 'Invest Freq' as the new target variable ---
+possible_target_names = [col for col in df.columns if col.strip().lower() == 'invest freq']
 if possible_target_names:
     target_col = possible_target_names[0]
 else:
-    st.error("❌ Error: Column 'Debt' not found in the dataset!")
+    st.error("❌ Error: Column 'Invest Freq' not found in the dataset!")
     st.write("Available columns:", list(df.columns))
     st.stop()
 
@@ -55,6 +55,7 @@ def user_input():
             input_data[col] = st.sidebar.selectbox(col, options)
         else:
             input_data[col] = st.sidebar.number_input(col, min_value=0, step=1)
+    input_data["Debt"] = st.sidebar.selectbox("Debt (Loan Paid or Not)", ["Yes", "No"])  # Added Debt column
     return pd.DataFrame([input_data])
 
 input_df = user_input()
@@ -77,30 +78,35 @@ def meets_repayment_rules(row_df):
     )
 
 # --- Prediction ---
-if meets_repayment_rules(input_df):
-    prediction = "Yes"
-    proba = [0.01, 0.99]
-else:
-    prediction = model.predict(input_encoded)[0]
-    proba = model.predict_proba(input_encoded)[0]
+predict_button = st.sidebar.button("Predict")
 
-# --- Display prediction ---
-st.subheader("🔮 Prediction Result")
-confidence = round(max(proba) * 100, 2)
+if predict_button:
+    if meets_repayment_rules(input_df):
+        prediction = "Yes"
+        proba = [0.01, 0.99]
+    else:
+        prediction = model.predict(input_encoded)[0]
+        proba = model.predict_proba(input_encoded)[0]
 
-if prediction == "Yes":
-    st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
-else:
-    st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
+    # --- Display prediction ---
+    st.subheader("🔮 Prediction Result")
+    confidence = round(max(proba) * 100, 2)
 
-# --- Download prediction result ---
-result_df = input_df.copy()
-result_df["Prediction"] = prediction
-result_df["Confidence (%)"] = confidence
-csv = result_df.to_csv(index=False).encode()
-st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+    if prediction == "Yes":
+        st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
+    else:
+        st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
 
-import random
+    # --- Display selected input data ---
+    st.subheader("📋 Farmer Details (Selected by You)")
+    st.write(input_df)
+
+    # --- Download prediction result ---
+    result_df = input_df.copy()
+    result_df["Prediction"] = prediction
+    result_df["Confidence (%)"] = confidence
+    csv = result_df.to_csv(index=False).encode()
+    st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
 
 # --- Visualization ---
 st.markdown("---")
