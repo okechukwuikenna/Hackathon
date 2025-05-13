@@ -56,7 +56,6 @@ def user_input():
             input_data[col] = st.sidebar.selectbox(col, options)
         else:
             input_data[col] = st.sidebar.number_input(col, min_value=0, step=1)
-    input_data["Debt"] = st.sidebar.selectbox("Debt (Loan Paid or Not)", ["Yes", "No"])  # Added Debt column
     return pd.DataFrame([input_data])
 
 input_df = user_input()
