@@ -2,23 +2,32 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import classification_report
 import joblib
 
 # Load dataset
 df = pd.read_excel("loan_features_tables.xlsx")
 
-# Preprocessing - Convert categorical columns to numerical using LabelEncoder or OneHotEncoder
+# Define categorical columns
 label_columns = ['Voters Card', 'BVN', 'Tax Invoice', 'Tax Clearance Cert', 'Invest Freq', 
                  'Borrowed Money', 'Debt', 'Own Agri Land', 'Own Agri Mech Tool', 
                  'Gender', 'Drought Damage', 'Pest Infestation', 'Source of Income']
 
-label_encoder = LabelEncoder()
+# Manually encode 'Invest Freq' as target
+invest_freq_mapping = {
+    "Do not save": 0,
+    "Sometimes": 1,
+    "Always": 2
+}
+df['Invest Freq'] = df['Invest Freq'].map(invest_freq_mapping)
 
-# Apply label encoding to categorical columns
+# Apply label encoding to remaining categorical columns (independently)
 for col in label_columns:
-    df[col] = label_encoder.fit_transform(df[col])
+    if col != 'Invest Freq':  # Already encoded manually
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col])
 
-# Handle 'Avg Income Level' (it needs to be converted to a numerical value)
+# Map income levels to ordinal scale
 income_mapping = {
     'No income': 0,
     'Below N15,000 per month': 1,
@@ -39,25 +48,23 @@ income_mapping = {
     'N295,001 - N315,000 per month': 16,
     'Above N315,000 per month': 17
 }
-
 df['Avg Income Level'] = df['Avg Income Level'].map(income_mapping)
 
-# Feature and Target
-X = df.drop('Debt', axis=1)  # All columns except the target
-y = df['Debt']  # Target variable (whether the loan is paid)
+# Set features and target
+X = df.drop('Invest Freq', axis=1)
+y = df['Invest Freq']
 
-# Split the data into training and test sets
+# Split dataset
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Initialize the model
+# Train model
 model = RandomForestClassifier(n_estimators=100, random_state=42)
-
-# Train the model
 model.fit(X_train, y_train)
 
-# Save the trained model
+# Save model
 joblib.dump(model, 'model.pkl')
 
-# Print the model accuracy
-accuracy = model.score(X_test, y_test)
-print(f'Model accuracy: {accuracy:.2f}')
+# Evaluate model
+y_pred = model.predict(X_test)
+print("Model classification report:\n")
+print(classification_report(y_test, y_pred))
