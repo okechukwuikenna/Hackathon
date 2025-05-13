@@ -4,6 +4,7 @@ import numpy as np
 from sklearn.preprocessing import OrdinalEncoder
 from sklearn.ensemble import RandomForestClassifier
 import plotly.express as px
+import random  
 
 # --- Streamlit page setup ---
 st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
@@ -76,37 +77,50 @@ def meets_repayment_rules(row_df):
             "Above N315,000 per month"
         ]
     )
+    
+# --- Sidebar input form ---
+st.sidebar.header("📋 Enter Farmer Details")
 
-# --- Prediction ---
-predict_button = st.sidebar.button("Predict")
+def user_input():
+    input_data = {}
+    for col in X.columns:
+        if col in categorical_cols:
+            options = sorted(df[col].dropna().unique())
+            input_data[col] = st.sidebar.selectbox(col, options, key=col)
+        else:
+            input_data[col] = st.sidebar.number_input(col, min_value=0, step=1, key=col)
+    return pd.DataFrame([input_data])
 
-if predict_button:
-    if meets_repayment_rules(input_df):
-        prediction = "Yes"
-        proba = [0.01, 0.99]
-    else:
-        prediction = model.predict(input_encoded)[0]
-        proba = model.predict_proba(input_encoded)[0]
+input_df = user_input()
 
-    # --- Display prediction ---
-    st.subheader("🔮 Prediction Result")
+# Encode input
+input_encoded = input_df.copy()
+input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
+
+# Add prediction button
+if st.button("🔮 Predict Loan Repayment"):
+    prediction = model.predict(input_encoded)[0]
+    proba = model.predict_proba(input_encoded)[0]
     confidence = round(max(proba) * 100, 2)
 
+    # Display input
+    st.subheader("📋 Selected Farmer Input")
+    st.dataframe(input_df)
+
+    # Display prediction
+    st.subheader("🔮 Prediction Result")
     if prediction == "Yes":
         st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
     else:
         st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
 
-    # --- Display selected input data ---
-    st.subheader("📋 Farmer Details (Selected by You)")
-    st.write(input_df)
-
-    # --- Download prediction result ---
+    # Download result
     result_df = input_df.copy()
     result_df["Prediction"] = prediction
     result_df["Confidence (%)"] = confidence
     csv = result_df.to_csv(index=False).encode()
     st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+
 
 # --- Visualization ---
 st.markdown("---")
