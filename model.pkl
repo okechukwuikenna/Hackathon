@@ -5,7 +5,7 @@ from sklearn.preprocessing import LabelEncoder
 import joblib
 
 # Load dataset
-df = pd.read_excel("farmer_loan_data.xlsx")
+df = pd.read_excel("loan_features_tables.xlsx")
 
 # Preprocessing - Convert categorical columns to numerical using LabelEncoder or OneHotEncoder
 label_columns = ['Voters Card', 'BVN', 'Tax Invoice', 'Tax Clearance Cert', 'Invest Freq', 
