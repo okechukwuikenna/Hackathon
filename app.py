@@ -77,37 +77,42 @@ def meets_repayment_rules(row_df):
     )
 
 # --- Prediction ---
-if not meets_repayment_rules(input_df):
-    prediction = "Not Eligible"
-    proba = [1.0, 0.0]  # Force 100% confidence in ineligibility
-else:
-    prediction = model.predict(input_encoded)[0]
-    proba = model.predict_proba(input_encoded)[0]
-
-# --- Display prediction ---
 st.subheader("🔮 Prediction Result")
-confidence = round(max(proba) * 100, 2)
 
-if prediction == "Yes":
-    st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
-elif prediction == "No":
-    st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
-elif prediction == "Not Eligible":
-    st.warning("🚫 This farmer is **not eligible** to be assessed for loan repayment based on required conditions:")
-    st.markdown("""
-    **Minimum Eligibility Requirements:**
-    - ✅ Age must be at least 21  
-    - ✅ BVN must be **Yes**  
-    - ✅ Tax Invoice must be **Yes**  
-    - ✅ Avg Income must be **above ₦115,000/month**
-    """)
+if st.button("🔍 Predict"):
+    eligible = meets_repayment_rules(input_df)
 
-# --- Download prediction result ---
-result_df = input_df.copy()
-result_df["Prediction"] = prediction
-result_df["Confidence (%)"] = confidence
-csv = result_df.to_csv(index=False).encode()
-st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+    if not eligible:
+        prediction = "Not Eligible"
+        proba = [1.0, 0.0]
+        st.warning("🚫 This farmer **does not meet the minimum eligibility requirements** to access the loan.")
+        st.markdown("""
+        **Requirements not met:**
+        - Age must be at least 21  
+        - BVN must be **Yes**  
+        - Tax Invoice must be **Yes**  
+        - Avg Income must be **above ₦115,000/month**
+        """)
+    else:
+        input_encoded = input_df.copy()
+        input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
+        prediction = model.predict(input_encoded)[0]
+        proba = model.predict_proba(input_encoded)[0]
+        confidence = round(max(proba) * 100, 2)
+
+        st.success("✅ This farmer **meets the eligibility requirements** and can access a loan.")
+
+        if prediction == "Yes":
+            st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
+        else:
+            st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
+
+    # --- Download prediction result ---
+    result_df = input_df.copy()
+    result_df["Prediction"] = prediction
+    result_df["Confidence (%)"] = round(max(proba) * 100, 2)
+    csv = result_df.to_csv(index=False).encode()
+    st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
 
 import random
 
