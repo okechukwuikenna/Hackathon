@@ -114,6 +114,7 @@ if st.button("🔍 Predict"):
     csv = result_df.to_csv(index=False).encode()
     st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
 
+
 import random
 
 # --- Visualization ---
