@@ -58,6 +58,10 @@ def user_input():
     return pd.DataFrame([input_data])
 
 input_df = user_input()
+
+# --- Debug: Show user inputs for rule check ---
+st.write("Debug: User Inputs for Rule Check", input_df)  # Debugging line to see what the user entered
+
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
