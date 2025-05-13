@@ -54,8 +54,7 @@ def user_input():
             options = sorted(df[col].dropna().unique())
             input_data[col] = st.sidebar.selectbox(col, options)
         else:
-            max_val = int(df[col].max()) if pd.api.types.is_numeric_dtype(df[col]) else 100
-            input_data[col] = st.sidebar.slider(col, min_value=0, max_value=max_val, value=0)
+            input_data[col] = st.sidebar.number_input(col, min_value=0, step=1)
     return pd.DataFrame([input_data])
 
 input_df = user_input()
@@ -65,18 +64,12 @@ input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 # --- Custom compulsory conditions for eligibility ---
 def meets_repayment_rules(row_df):
     row = row_df.iloc[0]
-    age = row.get("Age", 0)
-    debt = row.get("Debt", "Yes")
-    bvn = row.get("BVN", "No")
-    tax_invoice = row.get("Tax Invoice", "No")
-    avg_income = row.get("Avg Income Level", "")
-
     return (
-        age >= 21 and
-        debt == "No" and
-        bvn == "Yes" and
-        tax_invoice == "Yes" and
-        avg_income in [
+        row.get("Age", 0) >= 21 and
+        row.get("Debt", "Yes") == "No" and
+        row.get("BVN", "No") == "Yes" and
+        row.get("Tax Invoice", "No") == "Yes" and
+        row.get("Avg Income Level", "") in [
             "N115,001 - N215,000 per month",
             "N215,001 - N315,000 per month",
             "Above N315,000 per month"
@@ -84,41 +77,28 @@ def meets_repayment_rules(row_df):
     )
 
 # --- Prediction ---
+if meets_repayment_rules(input_df):
+    prediction = "Yes"
+    proba = [0.01, 0.99]
+else:
+    prediction = model.predict(input_encoded)[0]
+    proba = model.predict_proba(input_encoded)[0]
+
+# --- Display prediction ---
 st.subheader("🔮 Prediction Result")
+confidence = round(max(proba) * 100, 2)
 
-if st.button("🔍 Predict"):
-    input_encoded = input_df.copy()
-    input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
+if prediction == "Yes":
+    st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
+else:
+    st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
 
-    if not meets_repayment_rules(input_df):
-        prediction = "Not Eligible"
-        proba = [1.0, 0.0]
-        st.warning("🚫 This farmer **does not meet the minimum eligibility requirements** to access the loan.")
-        st.markdown("""
-        **Requirements not met:**
-        - Age must be at least 21  
-        - BVN must be **Yes**  
-        - Tax Invoice must be **Yes**  
-        - Avg Income Level must be **above ₦115,000/month**  
-        - Debt status must be **No**
-        """)
-    else:
-        prediction = model.predict(input_encoded)[0]
-        proba = model.predict_proba(input_encoded)[0]
-        confidence = round(max(proba) * 100, 2)
-
-        st.success("✅ This farmer **meets the eligibility requirements** and can access a loan.")
-
-        if prediction == "Yes":
-            st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
-        else:
-            st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
-
-    result_df = input_df.copy()
-    result_df["Prediction"] = prediction
-    result_df["Confidence (%)"] = round(max(proba) * 100, 2)
-    csv = result_df.to_csv(index=False).encode()
-    st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+# --- Download prediction result ---
+result_df = input_df.copy()
+result_df["Prediction"] = prediction
+result_df["Confidence (%)"] = confidence
+csv = result_df.to_csv(index=False).encode()
+st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
 
 import random
 
@@ -134,6 +114,7 @@ chart_type = st.selectbox(
     ["Bar", "Column", "Scatter", "Line", "Box", "Violin", "Pie", "Donut", "Histogram", "Heatmap"]
 )
 
+# Generate a random color palette
 unique_values = df[var_color].dropna().unique()
 color_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Set3 + px.colors.qualitative.Pastel
 random.shuffle(color_palette)
@@ -141,6 +122,7 @@ color_map = {val: color_palette[i % len(color_palette)] for i, val in enumerate(
 
 fig = None
 
+# --- Dynamic chart rendering ---
 if chart_type == "Bar":
     fig = px.bar(
         df,
@@ -254,9 +236,11 @@ elif chart_type == "Heatmap":
         st.warning("⚠️ Heatmap requires only numeric features.")
         st.write(str(e))
 
+# --- Show chart ---
 if fig:
     fig.update_layout(height=600)
     st.plotly_chart(fig, use_container_width=True)
+
 
 # --- Feature importance ---
 st.subheader("🔍 Top Features Influencing Repayment")
