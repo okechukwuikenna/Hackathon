@@ -80,9 +80,12 @@ def meets_repayment_rules(row_df):
 st.subheader("🔮 Prediction Result")
 
 if st.button("🔍 Predict"):
-    eligible = meets_repayment_rules(input_df)
+    # Encode the input first (important)
+    input_encoded = input_df.copy()
+    input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-    if not eligible:
+    # Check eligibility based on original (non-encoded) input
+    if not meets_repayment_rules(input_df):
         prediction = "Not Eligible"
         proba = [1.0, 0.0]
         st.warning("🚫 This farmer **does not meet the minimum eligibility requirements** to access the loan.")
@@ -94,8 +97,6 @@ if st.button("🔍 Predict"):
         - Avg Income must be **above ₦115,000/month**
         """)
     else:
-        input_encoded = input_df.copy()
-        input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
         prediction = model.predict(input_encoded)[0]
         proba = model.predict_proba(input_encoded)[0]
         confidence = round(max(proba) * 100, 2)
