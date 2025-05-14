@@ -339,26 +339,39 @@ if fig:
     img_bytes = fig.to_image(format="png")
     st.download_button("📥 Download Chart", data=img_bytes, file_name="chart.png", mime="image/png")
 
+if hasattr(model, 'feature_importances_'):
+    importance = model.feature_importances_
+    feature_names = df.columns  # Replace with your feature names if they differ
 
+# You can also use permutation importance, SHAP, etc. depending on your model.
 
-# --- Feature importance ---
-st.subheader("🔍 Top Features Influencing Repayment")
-importances = model.feature_importances_
-importance_df = pd.DataFrame({
-    "Feature": X.columns,
-    "Importance": importances
-}).sort_values(by="Importance", ascending=False)
+# --- Restrict Variables ---
+restricted_vars = ["Age", "Avg Income Level", "BVN", "Debt", "Tax Invoice"]
+priority_order = restricted_vars  # Variables you want prioritized
 
-fig_imp = px.bar(
-    importance_df,
-    x="Importance",
-    y="Feature",
-    orientation='h',
-    title="Feature Importance",
-    color="Importance",
-    color_continuous_scale="bluered"
+# Ensure the restricted variables come first
+important_vars = pd.DataFrame({
+    "Feature": feature_names,
+    "Importance": importance
+})
+
+# Sort features based on importance and keep restricted variables at the top
+important_vars = important_vars[important_vars["Feature"].isin(priority_order)].append(
+    important_vars[~important_vars["Feature"].isin(priority_order)],
+    ignore_index=True
 )
-st.plotly_chart(fig_imp, use_container_width=True)
+
+# --- Plot Feature Importance ---
+st.subheader("📊 Feature Importance (Priority: Age, Income, BVN, Debt, Tax Invoice)")
+
+# Plotting
+plt.figure(figsize=(10, 6))
+sns.barplot(x="Importance", y="Feature", data=important_vars, palette="viridis")
+plt.title("Feature Importance with Prioritized Variables")
+plt.xlabel("Importance")
+plt.ylabel("Feature")
+st.pyplot(plt)
+
 
 # --- Tips Section ---
 st.markdown("---")
