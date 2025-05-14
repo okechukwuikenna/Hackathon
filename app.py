@@ -68,16 +68,25 @@ input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 # --- Confidence calculation function ---
 def calculate_dynamic_confidence(income):
     """Calculate dynamic confidence based on the farmer's income."""
+    
+    # Debug print to check the income value being passed
+    st.write(f"Debugging Income: {income}")
+    
     if income > 315000:
         return 99.0
-    elif income >= 115001 and income <= 135000:
+    elif 115001 <= income <= 135000:
         return 60.0
-    elif income > 135000 and income <= 315000:
+    elif 135001 < income <= 315000:
         # Linear interpolation between 99% and 60% for income between 135,001 and 315,000
         confidence = 99.0 - ((income - 135000) * (39.0 / (315000 - 135000)))
-        return confidence
+        return round(confidence, 2)  # Round it for better readability
     else:
         return 0.0  # This can be adjusted as per requirement
+
+# Test the confidence calculation by using a sample income
+sample_income = 160000  # Adjust this value to test different incomes
+confidence = calculate_dynamic_confidence(sample_income)
+st.write(f"Dynamic Confidence: {confidence}%")
 
 def meets_repayment_rules(row_df):
     row = row_df.iloc[0]
