@@ -90,7 +90,7 @@ if predict_button:
         bvn == "Yes" and
         debt == "No" and
         tax_invoice == "Yes" and
-        (("N115,001" in income) or ("N215,001" in income) or ("Above N315,000" in income))  # Income strictly above 114,999
+        (income and float(income.split(" ")[0].replace(",", "")) > 114999)  # Check if income is above 114,999
     ):
         # If all business rules are met (including income), approve the loan
         prediction = "Yes"
@@ -122,8 +122,8 @@ if predict_button:
             missing_criteria.append("Debt (Loan Paid or Not) must be 'No'.")
         if tax_invoice != "Yes":
             missing_criteria.append("A valid Tax Invoice is required.")
-        if not (("N115,001" in income) or ("N215,001" in income) or ("Above N315,000" in income)):
-            missing_criteria.append("Income must be strictly above ₦114,999.")
+        if not (income and float(income.split(" ")[0].replace(",", "")) > 114999):
+            missing_criteria.append("Income must be above ₦114,999.")
 
         # Show the list of missing criteria
         for criterion in missing_criteria:
