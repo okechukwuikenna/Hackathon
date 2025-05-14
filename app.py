@@ -90,7 +90,17 @@ if predict_button:
         bvn == "Yes" and
         debt == "No" and
         tax_invoice == "Yes" and
-        (("N115,001" in income) or ("N215,001" in income) or ("Above N315,000" in income))  # Income strictly above 114,999
+        (
+            ("N115,001" in income) or 
+            ("N135,001" in income) or 
+            ("N155,001" in income) or 
+            ("N215,001" in income) or 
+            ("N235,001" in income) or 
+            ("N255,001" in income) or 
+            ("N275,001" in income) or 
+            ("N295,001" in income) or 
+            ("Above N315,000" in income)
+        )
     ):
         # If all business rules are met (including income), approve the loan
         prediction = "Yes"
@@ -122,8 +132,18 @@ if predict_button:
             missing_criteria.append("Debt (Loan Paid or Not) must be 'No'.")
         if tax_invoice != "Yes":
             missing_criteria.append("A valid Tax Invoice is required.")
-        if not (("N115,001" in income) or ("N215,001" in income) or ("Above N315,000" in income)):
-            missing_criteria.append("Income must be above ₦114,999.")
+        if not (
+            ("N115,001" in income) or 
+            ("N135,001" in income) or 
+            ("N155,001" in income) or 
+            ("N215,001" in income) or 
+            ("N235,001" in income) or 
+            ("N255,001" in income) or 
+            ("N275,001" in income) or 
+            ("N295,001" in income) or 
+            ("Above N315,000" in income)
+        ):
+            missing_criteria.append("Income must be above ₦114,999 (One of the following ranges: ₦115,001, ₦135,001, ₦155,001, ₦215,001, ₦235,001, ₦255,001, ₦275,001, ₦295,001, or above ₦315,000).")
 
         # Show the list of missing criteria
         for criterion in missing_criteria:
@@ -139,6 +159,7 @@ if predict_button:
     result_df["Confidence (%)"] = confidence
     csv = result_df.to_csv(index=False).encode()
     st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+
 
 # --- Visualization ---
 st.markdown("---")
