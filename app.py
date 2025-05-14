@@ -269,14 +269,16 @@ elif chart_type == "Pie":
             color_discrete_map=color_map
         )
     else:
-        # If 'None' is selected for var_color, just count occurrences of unique values in the column
-        pie_data = df.value_counts().reset_index()
-        pie_data.columns = ['Value', 'Count']
+        # If 'None' is selected for var_color, just count occurrences of unique values in the entire dataframe
+        pie_data = df.apply(pd.Series.value_counts).stack().reset_index(name='Count')
+        pie_data.columns = ['Value', 'Category', 'Count']  # 'Category' is for the column name and 'Value' for the actual data
+        
         fig = px.pie(
             pie_data,
             names='Value',
             values='Count',
             title="Pie Chart of All Values",
+            color='Category',  # You can use 'Category' for coloring
             color_discrete_map=color_map
         )
 
@@ -295,18 +297,19 @@ elif chart_type == "Donut":
             color_discrete_map=color_map
         )
     else:
-        # If 'None' is selected for var_color, just count occurrences of unique values in the column
-        donut_data = df.value_counts().reset_index()
-        donut_data.columns = ['Value', 'Count']
+        # If 'None' is selected for var_color, just count occurrences of unique values in the entire dataframe
+        donut_data = df.apply(pd.Series.value_counts).stack().reset_index(name='Count')
+        donut_data.columns = ['Value', 'Category', 'Count']  # 'Category' is for the column name and 'Value' for the actual data
+        
         fig = px.pie(
             donut_data,
             names='Value',
             values='Count',
             title="Donut Chart of All Values",
             hole=0.5,
+            color='Category',  # You can use 'Category' for coloring
             color_discrete_map=color_map
         )
-
 
 elif chart_type == "Histogram":
     fig = px.histogram(
