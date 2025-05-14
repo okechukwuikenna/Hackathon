@@ -256,29 +256,57 @@ elif chart_type == "Violin":
     )
 
 elif chart_type == "Pie":
-    pie_data = df[var_color].value_counts().reset_index() if var_color != "None" else df[value].value_counts().reset_index()  # Handle "None" case
-    pie_data.columns = [var_color, 'Count'] if var_color != "None" else ['Value', 'Count']
-    fig = px.pie(
-        pie_data,
-        names=var_color if var_color != "None" else 'Value',  # Apply color if not "None"
-        values='Count',
-        title=f"Pie Chart of {var_color}",
-        color=var_color if var_color != "None" else None,  # Apply color if not "None"
-        color_discrete_map=color_map if var_color != "None" else None  # Apply color map if not "None"
-    )
+    # Handle the case where 'None' is selected for var_color
+    if var_color != "None":
+        pie_data = df[var_color].value_counts().reset_index()
+        pie_data.columns = [var_color, 'Count']
+        fig = px.pie(
+            pie_data,
+            names=var_color,
+            values='Count',
+            title=f"Pie Chart of {var_color}",
+            color=var_color,
+            color_discrete_map=color_map
+        )
+    else:
+        # If 'None' is selected for var_color, just count occurrences of unique values in the column
+        pie_data = df.value_counts().reset_index()
+        pie_data.columns = ['Value', 'Count']
+        fig = px.pie(
+            pie_data,
+            names='Value',
+            values='Count',
+            title="Pie Chart of All Values",
+            color_discrete_map=color_map
+        )
 
 elif chart_type == "Donut":
-    donut_data = df[var_color].value_counts().reset_index() if var_color != "None" else df[value].value_counts().reset_index()  # Handle "None" case
-    donut_data.columns = [var_color, 'Count'] if var_color != "None" else ['Value', 'Count']
-    fig = px.pie(
-        donut_data,
-        names=var_color if var_color != "None" else 'Value',  # Apply color if not "None"
-        values='Count',
-        title=f"Donut Chart of {var_color}",
-        hole=0.5,
-        color=var_color if var_color != "None" else None,  # Apply color if not "None"
-        color_discrete_map=color_map if var_color != "None" else None  # Apply color map if not "None"
-    )
+    # Handle the case where 'None' is selected for var_color
+    if var_color != "None":
+        donut_data = df[var_color].value_counts().reset_index()
+        donut_data.columns = [var_color, 'Count']
+        fig = px.pie(
+            donut_data,
+            names=var_color,
+            values='Count',
+            title=f"Donut Chart of {var_color}",
+            hole=0.5,
+            color=var_color,
+            color_discrete_map=color_map
+        )
+    else:
+        # If 'None' is selected for var_color, just count occurrences of unique values in the column
+        donut_data = df.value_counts().reset_index()
+        donut_data.columns = ['Value', 'Count']
+        fig = px.pie(
+            donut_data,
+            names='Value',
+            values='Count',
+            title="Donut Chart of All Values",
+            hole=0.5,
+            color_discrete_map=color_map
+        )
+
 
 elif chart_type == "Histogram":
     fig = px.histogram(
