@@ -49,7 +49,7 @@ st.title("Farmer Loan Repayment Predictor")
 st.markdown("This model uses historical data to estimate the likelihood of a farmer repaying a loan based on demographic and economic features.")
 
 # --- Sidebar inputs ---
-st.sidebar.header("📋 Enter Farmer Details")
+st.sidebar.header("Enter Farmer Details")
 # --- Sidebar Theme Toggle ---
 dark_mode = st.sidebar.checkbox("Enable Dark Mode", value=False, help="Toggle dark/light theme for charts")
 
@@ -174,7 +174,7 @@ if predict_button:
     
 # --- Visualization ---
 st.markdown("---")
-st.subheader("📊 Dynamic Variable Comparison")
+st.subheader("Explore feature relationships")
 
 columns_with_none = ["None"] + list(df.columns)
 
@@ -354,7 +354,7 @@ st.plotly_chart(fig_imp, use_container_width=True)
 
 # --- Tips Section ---
 st.markdown("---")
-st.subheader("💡 Tips to Improve Loan Eligibility")
+st.subheader("Tips to Improve Loan Eligibility")
 st.markdown("""
 Improving your eligibility for agricultural loans is essential for building trust with lenders. Here are some tips:
 
