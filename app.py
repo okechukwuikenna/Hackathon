@@ -42,7 +42,7 @@ model = RandomForestClassifier(random_state=42)
 model.fit(X_encoded, y)
 
 # --- UI Header ---
-st.title("💸 Farmer Loan Repayment Predictor")
+st.title("Farmer Loan Repayment Predictor")
 st.markdown("This model uses historical data to estimate the likelihood of a farmer repaying a loan based on demographic and economic features.")
 
 # --- Sidebar inputs ---
@@ -111,7 +111,7 @@ if predict_button:
         proba = model.predict_proba(input_encoded)[0]
 
     # --- Display prediction ---
-    st.subheader("🔮 Prediction Result")
+    st.subheader("Prediction Result")
     confidence = round(max(proba) * 100, 2)
 
     if prediction == "Yes":
@@ -326,12 +326,12 @@ st.subheader("💡 Tips to Improve Loan Eligibility")
 st.markdown("""
 Improving your eligibility for agricultural loans is essential for building trust with lenders. Here are some tips:
 
-- 📄 **Submit complete documentation**: Including Voter’s Card, BVN, Tax Invoice, and Tax Clearance Certificate.
-- 💼 **Maintain steady income**: Aim for consistent income above ₦115,000/month.
-- 🌿 **Invest in your farm**: Frequent reinvestment in tools and land boosts credibility.
-- 🏡 **Own agricultural property**: Owning land and mechanized tools shows capacity to scale.
-- 📘 **Continue learning**: Completing secondary education or beyond helps improve eligibility.
-- 🛠️ **Control risks**: Reduce crop loss due to pests and drought by using modern methods.
+- **Submit complete documentation**: Including Voter’s Card, BVN, Tax Invoice, and Tax Clearance Certificate.
+- **Maintain steady income**: Aim for consistent income above ₦115,000/month.
+- **Invest in your farm**: Frequent reinvestment in tools and land boosts credibility.
+- **Own agricultural property**: Owning land and mechanized tools shows capacity to scale.
+- **Continue learning**: Completing secondary education or beyond helps improve eligibility.
+- **Control risks**: Reduce crop loss due to pests and drought by using modern methods.
 """)
 
 # --- Footer ---
