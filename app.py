@@ -330,9 +330,8 @@ if chart_type != "None":
         st.error("❌ Failed to render the chart. Please check your selections.")
         st.exception(e)
 
-# --- Show Chart ---
 if fig:
-    fig.update_layout(height=600)
+    fig.update_layout(template=theme_template, height=600)
     st.plotly_chart(fig, use_container_width=True)
 
     # --- Chart Export ---
