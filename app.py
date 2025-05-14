@@ -333,7 +333,7 @@ if fig:
     st.plotly_chart(fig, use_container_width=True)
 
 # --- Feature importance ---
-st.subheader("🔍 Top Features Influencing Repayment")
+st.subheader("Top Features Influencing Repayment")
 importances = model.feature_importances_
 importance_df = pd.DataFrame({
     "Feature": X.columns,
