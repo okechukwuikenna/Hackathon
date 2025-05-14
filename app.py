@@ -14,9 +14,10 @@ from PIL import Image
 st.set_page_config(page_title="AgriConnect", layout="wide")
 
 # Displaying the banner image at the top of the page
-st.image('https://github.com/okechukwuikenna/Hackathon/blob/main/young%20farmers.jpg', 
+st.image('https://raw.githubusercontent.com/okechukwuikenna/Hackathon/main/young%20farmers.jpg', 
          caption="AgriConnect", 
          use_container_width=True)
+
 
 # --- App Title & Subtitle ---
 st.markdown("""
