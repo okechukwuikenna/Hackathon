@@ -96,12 +96,9 @@ if predict_button:
         prediction = "Yes"
         proba = [0.01, 0.99]
     else:
-        # Otherwise, use the model's prediction
+        # If conditions are not met, use the model's prediction
         prediction = model.predict(input_encoded)[0]
         proba = model.predict_proba(input_encoded)[0]
-
-
-
 
     # --- Display prediction ---
     st.subheader("🔮 Prediction Result")
@@ -111,6 +108,26 @@ if predict_button:
         st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
     else:
         st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
+        
+        # Display the conditions that were not met
+        st.markdown("### ⚠️ Loan Approval Conditions Not Met:")
+        
+        missing_criteria = []
+
+        if age < 21:
+            missing_criteria.append("Age must be at least 21 years old.")
+        if bvn != "Yes":
+            missing_criteria.append("A valid BVN is required.")
+        if debt == "Yes":
+            missing_criteria.append("Debt (Loan Paid or Not) must be 'No'.")
+        if tax_invoice != "Yes":
+            missing_criteria.append("A valid Tax Invoice is required.")
+        if not (("N115,001" in income) or ("N215,001" in income) or ("Above N315,000" in income)):
+            missing_criteria.append("Income must be strictly above ₦114,999.")
+
+        # Show the list of missing criteria
+        for criterion in missing_criteria:
+            st.write(f"- {criterion}")
 
     # --- Display selected input data ---
     st.subheader("📋 Farmer Details (Selected by You)")
