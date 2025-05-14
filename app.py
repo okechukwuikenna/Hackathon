@@ -172,15 +172,15 @@ st.subheader("📊 Dynamic Variable Comparison")
 # Select X and Y axis variables
 var_x = st.selectbox("Select X-axis Variable", df.columns, key="x")
 var_y = st.selectbox("Select Y-axis Variable", df.columns, key="y")  # Select Y-axis variable
-var_color = st.selectbox("Group by (color)", df.columns, index=df.columns.get_loc(target_col), key="color")
-var_facet = st.selectbox("Split by (facet column)", ["None"] + list(df.columns), key="facet")
+var_color = st.selectbox("Group by (color)", ["None"] + list(df.columns), index=0, key="color")  # "None" option added
+var_facet = st.selectbox("Split by (facet column)", ["None"] + list(df.columns), key="facet")  # "None" option added
 chart_type = st.selectbox(
     "Choose Chart Type",
     ["Bar", "Column", "Scatter", "Line", "Box", "Violin", "Pie", "Donut", "Histogram", "Heatmap"]
 )
 
 # Generate a random color palette
-unique_values = df[var_color].dropna().unique()
+unique_values = df[var_color].dropna().unique() if var_color != "None" else []  # Handle "None" option for color
 color_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Set3 + px.colors.qualitative.Pastel
 random.shuffle(color_palette)
 color_map = {val: color_palette[i % len(color_palette)] for i, val in enumerate(unique_values)}
@@ -193,9 +193,9 @@ if chart_type == "Bar":
         df,
         x=var_x,
         y=var_y,  # Plot y-axis as a continuous variable
-        color=var_color,
+        color=var_color if var_color != "None" else None,  # Apply color if not "None"
         title=f"Bar Chart: {var_x} vs {var_y}",
-        color_discrete_map=color_map,
+        color_discrete_map=color_map if var_color != "None" else None,  # Apply color map if not "None"
         facet_col=var_facet if var_facet != "None" else None  # Split by facet column if selected
     )
 
@@ -204,9 +204,9 @@ elif chart_type == "Column":
         df,
         x=var_x,
         y=var_y,  # Plot y-axis as a continuous variable
-        color=var_color,
+        color=var_color if var_color != "None" else None,  # Apply color if not "None"
         title=f"Column Chart: {var_x} vs {var_y}",
-        color_discrete_map=color_map,
+        color_discrete_map=color_map if var_color != "None" else None,  # Apply color map if not "None"
         facet_col=var_facet if var_facet != "None" else None  # Split by facet column if selected
     )
 
@@ -215,9 +215,9 @@ elif chart_type == "Scatter":
         df,
         x=var_x,
         y=var_y,  # Use continuous variables for both axes
-        color=var_color,
+        color=var_color if var_color != "None" else None,  # Apply color if not "None"
         title=f"Scatter Plot: {var_x} vs {var_y} colored by {var_color}",
-        color_discrete_map=color_map,
+        color_discrete_map=color_map if var_color != "None" else None,  # Apply color map if not "None"
         facet_col=var_facet if var_facet != "None" else None  # Split by facet column if selected
     )
 
@@ -226,68 +226,69 @@ elif chart_type == "Line":
         df.sort_values(by=var_x),
         x=var_x,
         y=var_y,  # Use continuous variables for both axes
-        color=var_color,
+        color=var_color if var_color != "None" else None,  # Apply color if not "None"
         title=f"Line Chart: {var_x} vs {var_y} grouped by {var_color}",
-        color_discrete_map=color_map,
+        color_discrete_map=color_map if var_color != "None" else None,  # Apply color map if not "None"
         facet_col=var_facet if var_facet != "None" else None  # Split by facet column if selected
     )
 
 elif chart_type == "Box":
     fig = px.box(
         df,
-        x=var_color,
+        x=var_color if var_color != "None" else None,  # Apply color if not "None"
         y=var_y,  # Use continuous variable for the y-axis
-        color=var_color,
+        color=var_color if var_color != "None" else None,  # Apply color if not "None"
         title=f"Box Plot: {var_y} grouped by {var_color}",
-        color_discrete_map=color_map,
+        color_discrete_map=color_map if var_color != "None" else None,  # Apply color map if not "None"
         facet_col=var_facet if var_facet != "None" else None  # Split by facet column if selected
     )
 
 elif chart_type == "Violin":
     fig = px.violin(
         df,
-        x=var_color,
+        x=var_color if var_color != "None" else None,  # Apply color if not "None"
         y=var_y,  # Use continuous variable for the y-axis
-        color=var_color,
+        color=var_color if var_color != "None" else None,  # Apply color if not "None"
         box=True,
         title=f"Violin Plot: {var_y} grouped by {var_color}",
-        color_discrete_map=color_map,
+        color_discrete_map=color_map if var_color != "None" else None,  # Apply color map if not "None"
         facet_col=var_facet if var_facet != "None" else None  # Split by facet column if selected
     )
 
 elif chart_type == "Pie":
-    pie_data = df[var_color].value_counts().reset_index()
-    pie_data.columns = [var_color, 'Count']
+    pie_data = df[var_color].value_counts().reset_index() if var_color != "None" else df[value].value_counts().reset_index()  # Handle "None" case
+    pie_data.columns = [var_color, 'Count'] if var_color != "None" else ['Value', 'Count']
     fig = px.pie(
         pie_data,
-        names=var_color,
+        names=var_color if var_color != "None" else 'Value',  # Apply color if not "None"
         values='Count',
         title=f"Pie Chart of {var_color}",
-        color=var_color,
-        color_discrete_map=color_map
+        color=var_color if var_color != "None" else None,  # Apply color if not "None"
+        color_discrete_map=color_map if var_color != "None" else None  # Apply color map if not "None"
     )
 
 elif chart_type == "Donut":
-    donut_data = df[var_color].value_counts().reset_index()
-    donut_data.columns = [var_color, 'Count']
+    donut_data = df[var_color].value_counts().reset_index() if var_color != "None" else df[value].value_counts().reset_index()  # Handle "None" case
+    donut_data.columns = [var_color, 'Count'] if var_color != "None" else ['Value', 'Count']
     fig = px.pie(
         donut_data,
-        names=var_color,
+        names=var_color if var_color != "None" else 'Value',  # Apply color if not "None"
         values='Count',
         title=f"Donut Chart of {var_color}",
         hole=0.5,
-        color=var_color,
-        color_discrete_map=color_map
+        color=var_color if var_color != "None" else None,  # Apply color if not "None"
+        color_discrete_map=color_map if var_color != "None" else None  # Apply color map if not "None"
     )
 
 elif chart_type == "Histogram":
     fig = px.histogram(
         df,
         x=var_x,
-        color=var_color,
+        y=var_y,  # Plot y-axis as a continuous variable
+        color=var_color if var_color != "None" else None,  # Apply color if not "None"
         facet_col=var_facet if var_facet != "None" else None,
-        title=f"Histogram: {var_x} grouped by {var_color} and split by {var_facet}",
-        color_discrete_map=color_map,
+        title=f"Histogram: {var_x} vs {var_y} grouped by {var_color}",
+        color_discrete_map=color_map if var_color != "None" else None,  # Apply color map if not "None"
         category_orders={var_x: sorted(df[var_x].dropna().unique(), key=str)}
     )
 
