@@ -62,7 +62,6 @@ input_df = user_input()
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
 
-# --- Custom compulsory conditions for eligibility ---
 def meets_repayment_rules(row_df):
     row = row_df.iloc[0]
     return (
@@ -70,11 +69,9 @@ def meets_repayment_rules(row_df):
         row.get("Debt", "Yes") == "No" and
         row.get("BVN", "No") == "Yes" and
         row.get("Tax Invoice", "No") == "Yes" and
-        row.get("Avg Income Level", "") in [
-            "N115,001 - N215,000 per month",
-            "N215,001 - N315,000 per month",
-            "Above N315,000 per month"
-        ]
+        any(income in row.get("Avg Income Level", "") for income in [
+            "N115,001", "N215,001", "Above N315,000"
+        ])
     )
 
 # --- Prediction ---
