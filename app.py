@@ -51,12 +51,6 @@ st.markdown("This model uses historical data to estimate the likelihood of a far
 # --- Sidebar inputs ---
 st.sidebar.header("📋 Enter Farmer Details")
 
-# --- Sidebar Theme Toggle ---
-dark_mode = st.sidebar.checkbox("Enable Dark Mode", value=False, help="Toggle dark/light theme for charts")
-
-# Map to Plotly template
-theme_template = "plotly_dark" if dark_mode else "plotly_white"
-
 def user_input():
     input_data = {}
     for col in X.columns:
@@ -82,37 +76,11 @@ def meets_repayment_rules(row_df):
             "N115,001", "N215,001", "Above N315,000"
         ])
     )
-# --- Confidence calculation function ---
-def calculate_dynamic_confidence(income):
-    """Calculate dynamic confidence based on the farmer's income."""
-    # Clean the income string by removing "N" and commas
-    cleaned_income = income.replace("N", "").replace(",", "").strip()
 
-    try:
-        # Convert the cleaned income to an integer
-        income_value = int(cleaned_income)
-    except ValueError:
-        st.error("❌ Invalid income format!")
-        return 0.0  # If the income can't be converted, return 0.0 confidence
-
-    # Now that the income is numeric, proceed with the calculation
-    if income_value > 315000:
-        return 99.0
-    elif income_value >= 115001 and income_value <= 135000:
-        return 60.0
-    elif income_value > 135000 and income_value <= 315000:
-        # Linear interpolation between 99% and 60% for income between 135,001 and 315,000
-        confidence = 99.0 - ((income_value - 135000) * (39.0 / (315000 - 135000)))
-        return confidence
-    else:
-        return 0.0  # This can be adjusted as per requirement
-
-
-# --- Prediction Logic ---
+# --- Prediction ---
 predict_button = st.sidebar.button("Predict")
 
 if predict_button:
-    # Extracting necessary data from the input dataframe
     income = input_df.iloc[0].get("Avg Income Level", "")
     age = input_df.iloc[0].get("Age", 0)
     bvn = input_df.iloc[0].get("BVN", "No")
@@ -129,7 +97,7 @@ if predict_button:
             ("N115,001" in income) or 
             ("N135,001" in income) or 
             ("N155,001" in income) or
-            ("N175,001" in income) or 
+            ("N175,001" in income) or
             ("N195,001" in income) or 
             ("N215,001" in income) or 
             ("N235,001" in income) or 
@@ -141,33 +109,11 @@ if predict_button:
     ):
         # If all business rules are met (including income), approve the loan
         prediction = "Yes"
-        
-        # Calculate dynamic confidence based on the income
-        dynamic_confidence = calculate_dynamic_confidence(income)
-        
-        # Adjust probability based on dynamic confidence
-        proba = [1 - dynamic_confidence / 100, dynamic_confidence / 100]
-        
+        proba = [0.01, 0.99]
     else:
         # If conditions are not met, use the model's prediction
         prediction = model.predict(input_encoded)[0]
-        
-        # Get the model's probability
-        model_proba = model.predict_proba(input_encoded)[0]
-        
-        # Calculate dynamic confidence based on income
-        dynamic_confidence = calculate_dynamic_confidence(income)
-        
-        # Adjust model probabilities by incorporating the dynamic confidence
-        # The higher the dynamic confidence, the more likely the positive prediction (i.e., "Yes")
-        adjusted_proba = [
-            (1 - dynamic_confidence / 100) * model_proba[0],  # Adjust the "No" probability
-            (dynamic_confidence / 100) * model_proba[1]       # Adjust the "Yes" probability
-        ]
-        
-        # Normalize the adjusted probabilities to ensure they sum to 1
-        total = sum(adjusted_proba)
-        proba = [p / total for p in adjusted_proba]
+        proba = model.predict_proba(input_encoded)[0]
 
     # --- Display prediction ---
     st.subheader("Prediction Result")
@@ -220,6 +166,13 @@ if predict_button:
     result_df["Confidence (%)"] = confidence
     csv = result_df.to_csv(index=False).encode()
     st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+
+# --- Theme Toggle ---
+st.markdown("### 🎨 Choose Theme")
+theme = st.radio("Select Display Theme", ["Light", "Dark"], horizontal=True)
+
+# Map to Plotly template
+theme_template = "plotly_dark" if theme == "Dark" else "plotly_white"
 
 # --- Visualization ---
 st.markdown("---")
