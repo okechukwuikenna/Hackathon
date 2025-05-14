@@ -93,7 +93,9 @@ if predict_button:
         (
             ("N115,001" in income) or 
             ("N135,001" in income) or 
-            ("N155,001" in income) or 
+            ("N155,001" in income) or
+            ("N175,001" in income) or
+            ("N195,001" in income) or 
             ("N215,001" in income) or 
             ("N235,001" in income) or 
             ("N255,001" in income) or 
@@ -135,7 +137,9 @@ if predict_button:
         if not (
             ("N115,001" in income) or 
             ("N135,001" in income) or 
-            ("N155,001" in income) or 
+            ("N155,001" in income) or
+            ("N175,001" in income) or 
+            ("N195,001" in income) or 
             ("N215,001" in income) or 
             ("N235,001" in income) or 
             ("N255,001" in income) or 
