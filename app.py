@@ -63,6 +63,8 @@ st.markdown("This model uses historical data to estimate the likelihood of a far
 
 # --- Sidebar inputs ---
 st.sidebar.header("Enter Farmer Details")
+dark_mode = st.sidebar.checkbox("Enable Dark Mode", value=False, help="Toggle dark/light theme for charts")
+
 
 # Map to Plotly template
 theme_template = "plotly_dark" if dark_mode else "plotly_white"
