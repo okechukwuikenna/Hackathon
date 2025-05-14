@@ -26,9 +26,6 @@ st.image('https://raw.githubusercontent.com/okechukwuikenna/Hackathon/main/young
          caption="Young Farmers", 
          use_container_width=True)
 
-# Continue with your rest of the app...
-
-
 # --- Load data ---
 @st.cache_data
 def load_data():
@@ -64,10 +61,57 @@ model.fit(X_encoded, y)
 # --- UI Header ---
 st.markdown("This model uses historical data to estimate the likelihood of a farmer repaying a loan based on demographic and economic features.")
 
+import streamlit as st
+
 # --- Sidebar inputs ---
 st.sidebar.header("Enter Farmer Details")
+
 # --- Sidebar Theme Toggle ---
 dark_mode = st.sidebar.checkbox("Enable Dark Mode", value=False, help="Toggle dark/light theme for charts")
+
+# --- Apply theme based on dark_mode ---
+if dark_mode:
+    st.set_page_config(page_title="Farmer Details", layout="centered", initial_sidebar_state="expanded")
+    st.markdown(
+        """
+        <style>
+        body {
+            background-color: #1e1e1e;
+            color: white;
+        }
+        .css-1d391kg {
+            background-color: #333;
+        }
+        .stSidebar {
+            background-color: #222;
+        }
+        </style>
+        """, 
+        unsafe_allow_html=True
+    )
+else:
+    st.set_page_config(page_title="Farmer Details", layout="centered", initial_sidebar_state="expanded")
+    st.markdown(
+        """
+        <style>
+        body {
+            background-color: white;
+            color: black;
+        }
+        .css-1d391kg {
+            background-color: #f0f0f0;
+        }
+        .stSidebar {
+            background-color: #f7f7f7;
+        }
+        </style>
+        """, 
+        unsafe_allow_html=True
+    )
+
+# --- Example content ---
+st.title("Farmer Data Input")
+st.write("This is where the form or other content will go.")
 
 # Map to Plotly template
 theme_template = "plotly_dark" if dark_mode else "plotly_white"
