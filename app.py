@@ -64,37 +64,36 @@ def user_input():
 input_df = user_input()
 input_encoded = input_df.copy()
 input_encoded[categorical_cols] = encoder.transform(input_df[categorical_cols])
-
 # --- Confidence calculation function ---
 def calculate_dynamic_confidence(income):
     """Calculate dynamic confidence based on the farmer's income."""
-    if income > 315000:
+    # Clean the income string by removing "N" and commas
+    cleaned_income = income.replace("N", "").replace(",", "").strip()
+
+    try:
+        # Convert the cleaned income to an integer
+        income_value = int(cleaned_income)
+    except ValueError:
+        st.error("❌ Invalid income format!")
+        return 0.0  # If the income can't be converted, return 0.0 confidence
+
+    # Now that the income is numeric, proceed with the calculation
+    if income_value > 315000:
         return 99.0
-    elif income >= 115001 and income <= 135000:
+    elif income_value >= 115001 and income_value <= 135000:
         return 60.0
-    elif income > 135000 and income <= 315000:
+    elif income_value > 135000 and income_value <= 315000:
         # Linear interpolation between 99% and 60% for income between 135,001 and 315,000
-        confidence = 99.0 - ((income - 135000) * (39.0 / (315000 - 135000)))
+        confidence = 99.0 - ((income_value - 135000) * (39.0 / (315000 - 135000)))
         return confidence
     else:
-        return 0.0  # This can be adjusted as per requirement.
-        
-def meets_repayment_rules(row_df):
-    row = row_df.iloc[0]
-    return (
-        row.get("Age", 0) >= 21 and
-        row.get("Debt", "Yes") == "No" and
-        row.get("BVN", "No") == "Yes" and
-        row.get("Tax Invoice", "No") == "Yes" and
-        any(income in row.get("Avg Income Level", "") for income in [
-            "N115,001", "N215,001", "Above N315,000"
-        ])
-    )
+        return 0.0  # This can be adjusted as per requirement
 
-# --- Prediction ---
+# --- Prediction Logic ---
 predict_button = st.sidebar.button("Predict")
 
 if predict_button:
+    # Extracting necessary data from the input dataframe
     income = input_df.iloc[0].get("Avg Income Level", "")
     age = input_df.iloc[0].get("Age", 0)
     bvn = input_df.iloc[0].get("BVN", "No")
@@ -121,7 +120,7 @@ if predict_button:
             ("Above N315,000" in income)
         )
     ):
-     # If all business rules are met (including income), approve the loan
+        # If all business rules are met (including income), approve the loan
         prediction = "Yes"
         
         # Calculate dynamic confidence based on the income
@@ -184,6 +183,7 @@ if predict_button:
     result_df["Confidence (%)"] = confidence
     csv = result_df.to_csv(index=False).encode()
     st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+
 
 # --- Theme Toggle ---
 st.markdown("### 🎨 Choose Theme")
