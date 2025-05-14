@@ -43,7 +43,7 @@ model.fit(X_encoded, y)
 
 # --- UI Header ---
 st.title("💸 Farmer Loan Repayment Predictor")
-st.markdown("st.markdown("This model uses historical data to estimate the likelihood of a farmer repaying a loan based on demographic and economic features.")
+st.markdown("This model uses historical data to estimate the likelihood of a farmer repaying a loan based on demographic and economic features.")
 
 # --- Sidebar inputs ---
 st.sidebar.header("📋 Enter Farmer Details")
