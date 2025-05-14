@@ -61,7 +61,8 @@ model.fit(X_encoded, y)
 # --- UI Header ---
 st.markdown("This model uses historical data to estimate the likelihood of a farmer repaying a loan based on demographic and economic features.")
 
-# --- Sidebar Theme Toggle ---
+# --- Sidebar inputs ---
+st.sidebar.header("Enter Farmer Details")
 dark_mode = st.sidebar.checkbox("Enable Dark Mode", value=False, help="Toggle dark/light theme for charts")
 
 # Map to Plotly template
