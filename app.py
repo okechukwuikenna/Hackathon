@@ -143,7 +143,7 @@ if predict_button:
             ("N295,001" in income) or 
             ("Above N315,000" in income)
         ):
-            missing_criteria.append("Income must be above ₦114,999 (One of the following ranges: ₦115,001, ₦135,001, ₦155,001, ₦215,001, ₦235,001, ₦255,001, ₦275,001, ₦295,001, or above ₦315,000).")
+            missing_criteria.append("Income must be above ₦114,999 ")
 
         # Show the list of missing criteria
         for criterion in missing_criteria:
