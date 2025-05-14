@@ -178,7 +178,7 @@ if predict_button:
             st.write(f"- {criterion}")
 
     # --- Display selected input data ---
-    st.subheader("📋 Farmer Details (Selected by You)")
+    st.subheader("Farmer Details (Selected by You)")
     st.write(input_df)
 
     # --- Download prediction result ---
