@@ -23,7 +23,7 @@ st.markdown("""
 
 # Displaying the banner image at the top of the page
 st.image('https://raw.githubusercontent.com/okechukwuikenna/Hackathon/main/young%20farmers.jpg', 
-         caption="AgriConnect", 
+         caption="Young Farmers", 
          use_container_width=True)
 
 # Continue with your rest of the app...
