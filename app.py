@@ -43,7 +43,7 @@ model.fit(X_encoded, y)
 
 # --- UI Header ---
 st.title("💸 Farmer Loan Repayment Predictor")
-st.markdown("Use this tool to predict whether a farmer is likely to repay a loan based on demographic and economic data.")
+st.markdown("st.markdown("This model uses historical data to estimate the likelihood of a farmer repaying a loan based on demographic and economic features.")
 
 # --- Sidebar inputs ---
 st.sidebar.header("📋 Enter Farmer Details")
@@ -78,12 +78,8 @@ def meets_repayment_rules(row_df):
 predict_button = st.sidebar.button("Predict")
 
 if predict_button:
-    if meets_repayment_rules(input_df):
-        prediction = "Yes"
-        proba = [0.01, 0.99]
-    else:
-        prediction = model.predict(input_encoded)[0]
-        proba = model.predict_proba(input_encoded)[0]
+    prediction = model.predict(input_encoded)[0]
+    proba = model.predict_proba(input_encoded)[0]
 
     # --- Display prediction ---
     st.subheader("🔮 Prediction Result")
