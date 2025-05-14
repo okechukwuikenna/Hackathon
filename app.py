@@ -187,7 +187,12 @@ columns_with_none = ["None"] + list(df.columns)
 var_x = st.selectbox("Select X-axis Variable", columns_with_none, key="x", help="Choose the variable for the X-axis")
 var_y = st.selectbox("Select Y-axis Variable", columns_with_none, key="y", help="Choose the Y-axis variable (ignored for Pie/Donut)")
 var_color = st.selectbox("Group by (color)", columns_with_none, key="color", help="Optional: Group/Color by a categorical column")
-var_facet = st.selectbox("Split by (facet column)", ["None"] + list(df.columns), key="facet", help="Optional: Split chart into subplots")
+var_facet = st.selectbox(
+    "Split by (facet column)",
+    ["None", "Gender"],
+    key="facet",
+    help="Optional: Split chart into subplots"
+)
 
 chart_type = st.selectbox(
     "Choose Chart Type",
