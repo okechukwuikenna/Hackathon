@@ -13,6 +13,9 @@ from PIL import Image
 # --- Page Configuration ---
 st.set_page_config(page_title="AgriConnect", layout="wide")
 
+# Display the banner image from GitHub
+st.image("https://raw.githubusercontent.com/okechukwuikenna/Hackathon/main/young%20farmers.jpg", use_column_width=True)
+
 # --- App Title & Subtitle ---
 st.markdown("""
 # AgriConnect
