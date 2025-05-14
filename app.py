@@ -79,13 +79,26 @@ predict_button = st.sidebar.button("Predict")
 
 if predict_button:
     income = input_df.iloc[0].get("Avg Income Level", "")
+    age = input_df.iloc[0].get("Age", 0)
+    bvn = input_df.iloc[0].get("BVN", "No")
+    debt = input_df.iloc[0].get("Debt", "Yes")
+    tax_invoice = input_df.iloc[0].get("Tax Invoice", "No")
 
-    if any(threshold in income for threshold in ["N115,001", "N215,001", "Above N315,000"]):
+    # Check if the farmer qualifies for the loan based on business rules
+    if (
+        age >= 21 and
+        bvn == "Yes" and
+        debt == "No" and
+        tax_invoice == "Yes" and
+        any(threshold in income for threshold in ["N115,001", "N215,001", "Above N315,000"])
+    ):
         prediction = "Yes"
         proba = [0.01, 0.99]
     else:
+        # If the business rules are not met, use the model's prediction
         prediction = model.predict(input_encoded)[0]
         proba = model.predict_proba(input_encoded)[0]
+
 
 
     # --- Display prediction ---
