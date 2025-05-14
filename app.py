@@ -63,17 +63,6 @@ st.markdown("This model uses historical data to estimate the likelihood of a far
 
 # --- Sidebar inputs ---
 st.sidebar.header("Enter Farmer Details")
-# Dynamic label depending on mode
-label = "Disable Dark Mode" if current_dark_mode else "Enable Dark Mode"
-
-# Checkbox with dynamic label and default value matching current mode
-dark_mode = st.sidebar.checkbox(label, value=current_dark_mode, help="Toggle dark/light theme for charts")
-
-# Use dark_mode value in your app logic
-if dark_mode:
-    st.write("Dark mode is enabled.")
-else:
-    st.write("Dark mode is disabled.")
 
 # Map to Plotly template
 theme_template = "plotly_dark" if dark_mode else "plotly_white"
