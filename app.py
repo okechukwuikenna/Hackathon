@@ -166,6 +166,14 @@ if predict_button:
     result_df["Confidence (%)"] = confidence
     csv = result_df.to_csv(index=False).encode()
     st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+
+# --- Theme Toggle ---
+st.markdown("### 🎨 Choose Theme")
+theme = st.radio("Select Display Theme", ["Light", "Dark"], horizontal=True)
+
+# Map to Plotly template
+theme_template = "plotly_dark" if theme == "Dark" else "plotly_white"
+
 # --- Visualization ---
 st.markdown("---")
 st.subheader("📊 Dynamic Variable Comparison")
