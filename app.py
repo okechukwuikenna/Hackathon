@@ -121,9 +121,13 @@ if predict_button:
             ("Above N315,000" in income)
         )
     ):
-        # If all business rules are met (including income), approve the loan
+     # If all business rules are met (including income), approve the loan
         prediction = "Yes"
-        proba = [0.01, 0.99]
+        
+        # Calculate dynamic confidence based on the income
+        dynamic_confidence = calculate_dynamic_confidence(income)
+        proba = [1 - dynamic_confidence / 100, dynamic_confidence / 100]
+        
     else:
         # If conditions are not met, use the model's prediction
         prediction = model.predict(input_encoded)[0]
