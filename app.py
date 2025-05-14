@@ -10,8 +10,14 @@ from PIL import Image
 
 
 # --- Streamlit page setup ---
-st.set_page_config(page_title="Farmer Loan Repayment Predictor", layout="wide")
+# --- Page Configuration ---
+st.set_page_config(page_title="AgriConnect", layout="wide")
 
+# --- App Title & Subtitle ---
+st.markdown("""
+# AgriConnect
+### *The bridge between young farmers and Financiers*
+""")
 # --- Load data ---
 @st.cache_data
 def load_data():
