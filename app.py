@@ -323,29 +323,6 @@ if fig:
 # --- Show Chart ---
 if fig:
     fig.update_layout(height=600)
-    # Optional annotation input
-st.markdown("### 📝 Add Chart Annotation (Optional)")
-add_note = st.checkbox("Add annotation to chart")
-
-if add_note:
-    note_text = st.text_input("Annotation Text", value="Threshold or Note")
-    note_x = st.text_input("X Position (e.g. 2023, Category A, etc.)")
-    note_y = st.text_input("Y Position (if applicable)", value="0")
-
-    if note_text and note_x:
-        try:
-            fig.add_annotation(
-                text=note_text,
-                x=note_x,
-                y=float(note_y) if note_y else None,
-                showarrow=True,
-                arrowhead=1
-            )
-        except Exception as e:
-            st.warning("⚠️ Failed to add annotation.")
-            st.write(str(e))
-    st.plotly_chart(fig, use_container_width=True)
-
     # --- Chart Export ---
     st.markdown("### 📤 Export Chart as PNG")
     img_bytes = fig.to_image(format="png")
