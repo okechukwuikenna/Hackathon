@@ -155,7 +155,7 @@ if predict_button:
         if bvn != "Yes":
             missing_criteria.append("A valid BVN is required.")
         if debt == "Yes":
-            missing_criteria.append("You must pay your previous Debt.")
+            missing_criteria.append("You must pay your previous debt.")
         if tax_invoice != "Yes":
             missing_criteria.append("A valid Tax Invoice is required.")
         if not (
