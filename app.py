@@ -183,7 +183,7 @@ if predict_button:
     result_df["Prediction"] = prediction
     result_df["Confidence (%)"] = confidence
     csv = result_df.to_csv(index=False).encode()
-    st.download_button("⬇️ Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+    st.download_button(" ⬇️ Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
     
 # --- Visualization ---
 st.markdown("---")
