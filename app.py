@@ -13,15 +13,21 @@ from PIL import Image
 # --- Page Configuration ---
 st.set_page_config(page_title="AgriConnect", layout="wide")
 
+import streamlit as st
+
 # --- App Title & Subtitle ---
 st.markdown("""
 # AgriConnect
 ### *The bridge between young farmers and Financiers*
 """)
+
 # Displaying the banner image at the top of the page
 st.image('https://raw.githubusercontent.com/okechukwuikenna/Hackathon/main/young%20farmers.jpg', 
          caption="AgriConnect", 
          use_container_width=True)
+
+# Continue with your rest of the app...
+
 
 # --- Load data ---
 @st.cache_data
