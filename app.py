@@ -332,11 +332,6 @@ if fig:
     fig.update_layout(template=theme_template, height=600)
     st.plotly_chart(fig, use_container_width=True)
 
-    # --- Chart Export ---
-    st.markdown("### 📤 Export Chart as PNG")
-    img_bytes = fig.to_image(format="png")
-    st.download_button("📥 Download Chart", data=img_bytes, file_name="chart.png", mime="image/png")
-
 # --- Feature importance ---
 st.subheader("🔍 Top Features Influencing Repayment")
 importances = model.feature_importances_
