@@ -90,14 +90,16 @@ if predict_button:
         bvn == "Yes" and
         debt == "No" and
         tax_invoice == "Yes" and
-        any(threshold in income for threshold in ["N115,001", "N215,001", "Above N315,000"])
+        (("N115,001" in income) or ("N215,001" in income) or ("Above N315,000" in income))  # Income strictly above 114,999
     ):
+        # If all business rules are met (including income), approve the loan
         prediction = "Yes"
         proba = [0.01, 0.99]
     else:
-        # If the business rules are not met, use the model's prediction
+        # Otherwise, use the model's prediction
         prediction = model.predict(input_encoded)[0]
         proba = model.predict_proba(input_encoded)[0]
+
 
 
 
