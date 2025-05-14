@@ -166,26 +166,25 @@ if predict_button:
     result_df["Confidence (%)"] = confidence
     csv = result_df.to_csv(index=False).encode()
     st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
-# --- Theme Toggle ---
-st.sidebar.markdown("## 🎨 Theme Settings")
-theme_mode = st.sidebar.radio("Choose Theme", ["Light", "Dark"], index=0)
-theme_template = "plotly_dark" if theme_mode == "Dark" else "plotly_white"
-
 # --- Visualization ---
 st.markdown("---")
 st.subheader("📊 Dynamic Variable Comparison")
 
-# --- Select variables ---
-var_x = st.selectbox("Select X-axis Variable", ["None"] + list(df.columns), index=0, key="x")
-var_y = st.selectbox("Select Y-axis Variable", ["None"] + list(df.columns), index=0, key="y")
-var_color = st.selectbox("Group by (color)", ["None"] + list(df.columns), key="color")
-var_facet = st.selectbox("Split by (facet column)", ["None"] + list(df.columns), key="facet")
+columns_with_none = ["None"] + list(df.columns)
+
+# Selectors with tooltips
+var_x = st.selectbox("Select X-axis Variable", columns_with_none, key="x", help="Choose the variable for the X-axis")
+var_y = st.selectbox("Select Y-axis Variable", columns_with_none, key="y", help="Choose the Y-axis variable (ignored for Pie/Donut)")
+var_color = st.selectbox("Group by (color)", columns_with_none, key="color", help="Optional: Group/Color by a categorical column")
+var_facet = st.selectbox("Split by (facet column)", ["None"] + list(df.columns), key="facet", help="Optional: Split chart into subplots")
+
 chart_type = st.selectbox(
     "Choose Chart Type",
-    ["Bar", "Column", "Scatter", "Line", "Box", "Violin", "Pie", "Donut", "Histogram", "Heatmap"]
+    ["None", "Bar", "Column", "Scatter", "Line", "Box", "Violin", "Pie", "Donut", "Histogram", "Heatmap"],
+    help="Select the chart type you want to render"
 )
 
-# Generate a random color palette
+# Generate color map
 if var_color != "None":
     unique_values = df[var_color].dropna().unique()
     color_palette = px.colors.qualitative.Plotly + px.colors.qualitative.Set3 + px.colors.qualitative.Pastel
@@ -196,136 +195,144 @@ else:
 
 fig = None
 
-# --- Dynamic chart rendering ---
-if chart_type == "Bar":
-    if var_x != "None" and var_y != "None":
-        fig = px.bar(
-            df,
-            x=var_x,
-            y=var_y,
-            color=var_color if var_color != "None" else None,
-            facet_col=var_facet if var_facet != "None" else None,
-            barmode='group',
-            title=f"{chart_type} Chart: {var_x} vs {var_y}",
-            color_discrete_map=color_map
-        )
-
-elif chart_type == "Column":
-    if var_x != "None" and var_y != "None":
-        fig = px.histogram(
-            df,
-            x=var_x,
-            y=var_y,
-            color=var_color if var_color != "None" else None,
-            barmode='group',
-            facet_col=var_facet if var_facet != "None" else None,
-            title=f"{chart_type} Chart: {var_x} vs {var_y}",
-            color_discrete_map=color_map
-        )
-
-elif chart_type == "Scatter":
-    if var_x != "None" and var_y != "None":
-        fig = px.scatter(
-            df,
-            x=var_x,
-            y=var_y,
-            color=var_color if var_color != "None" else None,
-            facet_col=var_facet if var_facet != "None" else None,
-            title=f"{chart_type} Plot: {var_x} vs {var_y}",
-            color_discrete_map=color_map
-        )
-
-elif chart_type == "Line":
-    if var_x != "None" and var_y != "None":
-        fig = px.line(
-            df.sort_values(by=var_x),
-            x=var_x,
-            y=var_y,
-            color=var_color if var_color != "None" else None,
-            facet_col=var_facet if var_facet != "None" else None,
-            title=f"{chart_type} Chart: {var_x} over {var_y}",
-            color_discrete_map=color_map
-        )
-
-elif chart_type == "Box":
-    if var_y != "None":
-        fig = px.box(
-            df,
-            x=var_color if var_color != "None" else None,
-            y=var_y,
-            color=var_color if var_color != "None" else None,
-            title=f"Box Plot: {var_y} grouped by {var_color}",
-            color_discrete_map=color_map
-        )
-
-elif chart_type == "Violin":
-    if var_y != "None":
-        fig = px.violin(
-            df,
-            x=var_color if var_color != "None" else None,
-            y=var_y,
-            color=var_color if var_color != "None" else None,
-            box=True,
-            title=f"Violin Plot: {var_y} grouped by {var_color}",
-            color_discrete_map=color_map
-        )
-
-elif chart_type == "Pie":
-    if var_color != "None":
-        pie_data = df[var_color].value_counts().reset_index()
-        pie_data.columns = ['Value', 'Count']
-        fig = px.pie(
-            pie_data,
-            names='Value',
-            values='Count',
-            title=f"Pie Chart of {var_color}",
-            color='Value',
-            color_discrete_map=color_map
-        )
-
-elif chart_type == "Donut":
-    if var_color != "None":
-        donut_data = df[var_color].value_counts().reset_index()
-        donut_data.columns = ['Value', 'Count']
-        fig = px.pie(
-            donut_data,
-            names='Value',
-            values='Count',
-            hole=0.5,
-            title=f"Donut Chart of {var_color}",
-            color='Value',
-            color_discrete_map=color_map
-        )
-
-elif chart_type == "Histogram":
-    if var_x != "None":
-        fig = px.histogram(
-            df,
-            x=var_x,
-            color=var_color if var_color != "None" else None,
-            facet_col=var_facet if var_facet != "None" else None,
-            barmode='group',
-            title=f"Histogram: {var_x} grouped by {var_color}",
-            color_discrete_map=color_map
-        )
-
-elif chart_type == "Heatmap":
+# --- Chart Logic ---
+if chart_type != "None":
     try:
-        corr_df = df.select_dtypes(include=[np.number]).corr()
-        fig = px.imshow(
-            corr_df,
-            text_auto=True,
-            color_continuous_scale="RdBu_r",
-            title="Heatmap of Numeric Feature Correlation"
-        )
-    except Exception as e:
-        st.warning("⚠️ Heatmap requires only numeric features.")
-        st.write(str(e))
+        if chart_type == "Bar":
+            fig = px.bar(
+                df,
+                x=var_x if var_x != "None" else None,
+                y=var_y if var_y != "None" else None,
+                color=var_color if var_color != "None" else None,
+                facet_col=var_facet if var_facet != "None" else None,
+                barmode='group',
+                title="Bar Chart",
+                color_discrete_map=color_map
+            )
 
-# --- Show chart ---
+        elif chart_type == "Column":
+            fig = px.histogram(
+                df,
+                x=var_x if var_x != "None" else None,
+                y=var_y if var_y != "None" else None,
+                color=var_color if var_color != "None" else None,
+                facet_col=var_facet if var_facet != "None" else None,
+                barmode='group',
+                title="Column Chart",
+                color_discrete_map=color_map
+            )
+
+        elif chart_type == "Scatter":
+            fig = px.scatter(
+                df,
+                x=var_x if var_x != "None" else None,
+                y=var_y if var_y != "None" else None,
+                color=var_color if var_color != "None" else None,
+                facet_col=var_facet if var_facet != "None" else None,
+                title="Scatter Plot",
+                color_discrete_map=color_map
+            )
+
+        elif chart_type == "Line":
+            fig = px.line(
+                df.sort_values(by=var_x if var_x != "None" else df.columns[0]),
+                x=var_x if var_x != "None" else None,
+                y=var_y if var_y != "None" else None,
+                color=var_color if var_color != "None" else None,
+                facet_col=var_facet if var_facet != "None" else None,
+                title="Line Chart",
+                color_discrete_map=color_map
+            )
+
+        elif chart_type == "Box":
+            fig = px.box(
+                df,
+                x=var_x if var_x != "None" else None,
+                y=var_y if var_y != "None" else None,
+                color=var_color if var_color != "None" else None,
+                title="Box Plot",
+                color_discrete_map=color_map
+            )
+
+        elif chart_type == "Violin":
+            fig = px.violin(
+                df,
+                x=var_x if var_x != "None" else None,
+                y=var_y if var_y != "None" else None,
+                color=var_color if var_color != "None" else None,
+                box=True,
+                title="Violin Plot",
+                color_discrete_map=color_map
+            )
+
+        elif chart_type == "Pie":
+            pie_col = var_color if var_color != "None" else var_x
+            if pie_col != "None":
+                pie_data = df[pie_col].value_counts().reset_index()
+                pie_data.columns = ['Value', 'Count']
+                fig = px.pie(
+                    pie_data,
+                    names='Value',
+                    values='Count',
+                    title="Pie Chart",
+                    color='Value',
+                    color_discrete_map=color_map
+                )
+            else:
+                st.warning("⚠️ Please select at least a Group by or X-axis for the Pie chart.")
+
+        elif chart_type == "Donut":
+            donut_col = var_color if var_color != "None" else var_x
+            if donut_col != "None":
+                donut_data = df[donut_col].value_counts().reset_index()
+                donut_data.columns = ['Value', 'Count']
+                fig = px.pie(
+                    donut_data,
+                    names='Value',
+                    values='Count',
+                    title="Donut Chart",
+                    hole=0.5,
+                    color='Value',
+                    color_discrete_map=color_map
+                )
+            else:
+                st.warning("⚠️ Please select at least a Group by or X-axis for the Donut chart.")
+
+        elif chart_type == "Histogram":
+            fig = px.histogram(
+                df,
+                x=var_x if var_x != "None" else None,
+                color=var_color if var_color != "None" else None,
+                facet_col=var_facet if var_facet != "None" else None,
+                title="Histogram",
+                barmode='group',
+                color_discrete_map=color_map
+            )
+
+        elif chart_type == "Heatmap":
+            corr_df = df.select_dtypes(include=[np.number]).corr()
+            fig = px.imshow(
+                corr_df,
+                text_auto=True,
+                color_continuous_scale="RdBu_r",
+                title="Heatmap of Numeric Feature Correlation"
+            )
+
+    except Exception as e:
+        st.error("❌ Failed to render the chart. Please check your selections.")
+        st.exception(e)
+
+# --- Show Chart ---
 if fig:
-    fig.update_layout(template=theme_template, height=600)
+    fig.update_layout(height=600)
     st.plotly_chart(fig, use_container_width=True)
+
+    # --- Chart Export ---
+    st.markdown("### 📤 Export Chart as PNG")
+    img_bytes = fig.to_image(format="png")
+    st.download_button("📥 Download Chart", data=img_bytes, file_name="chart.png", mime="image/png")
+
+
 
 # --- Feature importance ---
 st.subheader("🔍 Top Features Influencing Repayment")
