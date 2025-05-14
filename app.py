@@ -84,61 +84,72 @@ if predict_button:
     debt = input_df.iloc[0].get("Debt", "Yes")
     tax_invoice = input_df.iloc[0].get("Tax Invoice", "No")
 
-    # Check if the farmer qualifies for the loan based on business rules
-    if (
-        age >= 21 and
-        bvn == "Yes" and
-        debt == "No" and
-        tax_invoice == "Yes" and
-        (income and float(income.split(" ")[0].replace(",", "")) > 114999)  # Check if income is above 114,999
-    ):
-        # If all business rules are met (including income), approve the loan
-        prediction = "Yes"
-        proba = [0.01, 0.99]
-    else:
-        # If conditions are not met, use the model's prediction
-        prediction = model.predict(input_encoded)[0]
-        proba = model.predict_proba(input_encoded)[0]
-
-    # --- Display prediction ---
-    st.subheader("🔮 Prediction Result")
-    confidence = round(max(proba) * 100, 2)
-
-    if prediction == "Yes":
-        st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
-    else:
-        st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
+    # Check if income is not empty and try to convert it to float
+    try:
+        income_value = 0
+        if income:
+            # Clean the income value by removing commas and splitting the string to get the numeric part
+            income_value = float(income.split(" ")[0].replace(",", ""))
         
-        # Display the conditions that were not met
-        st.markdown("### ⚠️ Loan Approval Conditions Not Met:")
-        
-        missing_criteria = []
+        # Check if the farmer qualifies for the loan based on business rules
+        if (
+            age >= 21 and
+            bvn == "Yes" and
+            debt == "No" and
+            tax_invoice == "Yes" and
+            income_value > 114999  # Check if income is above 114,999
+        ):
+            # If all business rules are met (including income), approve the loan
+            prediction = "Yes"
+            proba = [0.01, 0.99]
+        else:
+            # If conditions are not met, use the model's prediction
+            prediction = model.predict(input_encoded)[0]
+            proba = model.predict_proba(input_encoded)[0]
 
-        if age < 21:
-            missing_criteria.append("Age must be at least 21 years old.")
-        if bvn != "Yes":
-            missing_criteria.append("A valid BVN is required.")
-        if debt == "Yes":
-            missing_criteria.append("Debt (Loan Paid or Not) must be 'No'.")
-        if tax_invoice != "Yes":
-            missing_criteria.append("A valid Tax Invoice is required.")
-        if not (income and float(income.split(" ")[0].replace(",", "")) > 114999):
-            missing_criteria.append("Income must be above ₦114,999.")
+        # --- Display prediction ---
+        st.subheader("🔮 Prediction Result")
+        confidence = round(max(proba) * 100, 2)
 
-        # Show the list of missing criteria
-        for criterion in missing_criteria:
-            st.write(f"- {criterion}")
+        if prediction == "Yes":
+            st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
+        else:
+            st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
+            
+            # Display the conditions that were not met
+            st.markdown("### ⚠️ Loan Approval Conditions Not Met:")
+            
+            missing_criteria = []
 
-    # --- Display selected input data ---
-    st.subheader("📋 Farmer Details (Selected by You)")
-    st.write(input_df)
+            if age < 21:
+                missing_criteria.append("Age must be at least 21 years old.")
+            if bvn != "Yes":
+                missing_criteria.append("A valid BVN is required.")
+            if debt == "Yes":
+                missing_criteria.append("Debt (Loan Paid or Not) must be 'No'.")
+            if tax_invoice != "Yes":
+                missing_criteria.append("A valid Tax Invoice is required.")
+            if income_value <= 114999:
+                missing_criteria.append("Income must be above ₦114,999.")
 
-    # --- Download prediction result ---
-    result_df = input_df.copy()
-    result_df["Prediction"] = prediction
-    result_df["Confidence (%)"] = confidence
-    csv = result_df.to_csv(index=False).encode()
-    st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+            # Show the list of missing criteria
+            for criterion in missing_criteria:
+                st.write(f"- {criterion}")
+
+        # --- Display selected input data ---
+        st.subheader("📋 Farmer Details (Selected by You)")
+        st.write(input_df)
+
+        # --- Download prediction result ---
+        result_df = input_df.copy()
+        result_df["Prediction"] = prediction
+        result_df["Confidence (%)"] = confidence
+        csv = result_df.to_csv(index=False).encode()
+        st.download_button("📥 Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+
+    except Exception as e:
+        st.error(f"⚠️ Error: {str(e)}")
+
 
 # --- Visualization ---
 st.markdown("---")
