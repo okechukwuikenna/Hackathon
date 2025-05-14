@@ -78,8 +78,15 @@ def meets_repayment_rules(row_df):
 predict_button = st.sidebar.button("Predict")
 
 if predict_button:
-    prediction = model.predict(input_encoded)[0]
-    proba = model.predict_proba(input_encoded)[0]
+    income = input_df.iloc[0].get("Avg Income Level", "")
+
+    if any(threshold in income for threshold in ["N115,001", "N215,001", "Above N315,000"]):
+        prediction = "Yes"
+        proba = [0.01, 0.99]
+    else:
+        prediction = model.predict(input_encoded)[0]
+        proba = model.predict_proba(input_encoded)[0]
+
 
     # --- Display prediction ---
     st.subheader("🔮 Prediction Result")
