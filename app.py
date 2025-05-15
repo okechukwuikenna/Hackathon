@@ -20,11 +20,13 @@ st.markdown("""
 # AgriConnect
 ### *The bridge between young farmers and Financiers*
 """)
+# Create placeholders
+prediction_placeholder = st.empty()
+image_placeholder = st.empty()
 
-# Displaying the banner image at the top of the page
-st.image('https://raw.githubusercontent.com/okechukwuikenna/Hackathon/main/young%20farmers.jpg', 
-         caption="Young Farmers", 
-         use_container_width=True)
+image_placeholder.image('https://raw.githubusercontent.com/okechukwuikenna/Hackathon/main/young%20farmers.jpg', 
+                        caption="Young Farmers", 
+                        use_container_width=True)
 
 # --- Load data ---
 @st.cache_data
@@ -133,57 +135,56 @@ if predict_button:
         prediction = model.predict(input_encoded)[0]
         proba = model.predict_proba(input_encoded)[0]
 
-    # --- Display prediction ---
-    st.subheader("Prediction Result")
-    confidence = round(max(proba) * 100, 2)
+if predict_button:
+    # ... your existing prediction code ...
 
-    if prediction == "Yes":
-        st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
-    else:
-        st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
-        
-        # Display the conditions that were not met
-        st.markdown("### ⚠️ Loan Approval Conditions Not Met:")
-        
-        missing_criteria = []
+    with prediction_placeholder.container():
+        st.subheader("Prediction Result")
+        confidence = round(max(proba) * 100, 2)
 
-        if age < 21:
-            missing_criteria.append("Age must be at least 21 years old.")
-        if bvn != "Yes":
-            missing_criteria.append("A valid BVN is required.")
-        if debt == "Yes":
-            missing_criteria.append("You MUST pay your previous debt.")
-        if tax_invoice != "Yes":
-            missing_criteria.append("A valid Tax Invoice is required.")
-        if not (
-            ("N115,001" in income) or 
-            ("N135,001" in income) or 
-            ("N155,001" in income) or
-            ("N175,001" in income) or 
-            ("N195,001" in income) or 
-            ("N215,001" in income) or 
-            ("N235,001" in income) or 
-            ("N255,001" in income) or 
-            ("N275,001" in income) or 
-            ("N295,001" in income) or 
-            ("Above N315,000" in income)
-        ):
-            missing_criteria.append(" Monthly Income must be above ₦114,999 ")
+        if prediction == "Yes":
+            st.success(f"✅ This farmer is **likely to repay** the loan. (Confidence: {confidence}%)")
+        else:
+            st.error(f"⚠️ This farmer is **unlikely to repay** the loan. (Confidence: {confidence}%)")
+            
+            st.markdown("### ⚠️ Loan Approval Conditions Not Met:")
+            missing_criteria = []
 
-        # Show the list of missing criteria
-        for criterion in missing_criteria:
-            st.write(f"- {criterion}")
+            if age < 21:
+                missing_criteria.append("Age must be at least 21 years old.")
+            if bvn != "Yes":
+                missing_criteria.append("A valid BVN is required.")
+            if debt == "Yes":
+                missing_criteria.append("You MUST pay your previous debt.")
+            if tax_invoice != "Yes":
+                missing_criteria.append("A valid Tax Invoice is required.")
+            if not (
+                ("N115,001" in income) or 
+                ("N135,001" in income) or 
+                ("N155,001" in income) or
+                ("N175,001" in income) or 
+                ("N195,001" in income) or 
+                ("N215,001" in income) or 
+                ("N235,001" in income) or 
+                ("N255,001" in income) or 
+                ("N275,001" in income) or 
+                ("N295,001" in income) or 
+                ("Above N315,000" in income)
+            ):
+                missing_criteria.append(" Monthly Income must be above ₦114,999 ")
 
-    # --- Display selected input data ---
-    st.subheader("Farmer Details (Selected by You)")
-    st.write(input_df)
+            for criterion in missing_criteria:
+                st.write(f"- {criterion}")
 
-    # --- Download prediction result ---
-    result_df = input_df.copy()
-    result_df["Prediction"] = prediction
-    result_df["Confidence (%)"] = confidence
-    csv = result_df.to_csv(index=False).encode()
-    st.download_button(" ⬇️ Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+        st.subheader("Farmer Details (Selected by You)")
+        st.write(input_df)
+
+        result_df = input_df.copy()
+        result_df["Prediction"] = prediction
+        result_df["Confidence (%)"] = confidence
+        csv = result_df.to_csv(index=False).encode()
+        st.download_button(" ⬇️ Download Prediction Result", data=csv, file_name="loan_prediction_result.csv", mime="text/csv")
+
     
 # --- Visualization ---
 st.markdown("---")
