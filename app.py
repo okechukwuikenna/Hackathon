@@ -62,7 +62,7 @@ model.fit(X_encoded, y)
 st.markdown("This model uses historical data to estimate the likelihood of a farmer repaying a loan based on demographic and economic features.")
 
 # --- Sidebar inputs ---
-st.sidebar.header("Enter Farmer Details")
+st.sidebar.header("Enter Farmer Details To Predict Loan Eligibility")
 dark_mode = st.sidebar.checkbox("Enable Dark Mode", value=False, help="Toggle dark/light theme for charts")
 
 
