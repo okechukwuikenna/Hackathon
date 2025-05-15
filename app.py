@@ -96,7 +96,7 @@ def meets_repayment_rules(row_df):
     )
 
 # --- Prediction ---
-predict_button = st.sidebar.button("Predict").
+predict_button = st.sidebar.button("Predict")
 
 if predict_button:
     income = input_df.iloc[0].get("Avg Income Level", "")
