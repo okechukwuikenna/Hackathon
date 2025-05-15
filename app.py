@@ -95,8 +95,19 @@ def meets_repayment_rules(row_df):
         ])
     )
 
-# --- Prediction ---
-predict_button = st.sidebar.button("Predict")
+# --- Prediction Result Placeholder ---
+result_placeholder = st.empty()  # Reserve a visible spot for results
+
+# --- Prediction Logic ---
+if predict_button:
+    # Run model prediction
+    prediction = model.predict(input_encoded)[0]
+    proba = model.predict_proba(input_encoded)[0]
+
+    # Show prediction result without scrolling
+    result_placeholder.markdown("## 🧮 Prediction Result")
+    result_placeholder.markdown(f"### 🔍 Loan Approved: **{prediction}**")
+    result_placeholder.markdown(f"**Confidence:** {round(proba[1]*100, 2)}%")
 
 if predict_button:
     income = input_df.iloc[0].get("Avg Income Level", "")
